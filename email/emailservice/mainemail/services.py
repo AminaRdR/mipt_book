@@ -2,6 +2,26 @@ from django.core.mail import send_mail
 from emailservice.settings import EMAIL_HOST_USER
 import logging
 import datetime
+from fpdf import FPDF
+
+
+class PDF(FPDF):
+    def header(self):
+        # Logo
+        # self.image('logo_bg.png', 170, 7, 33)
+        # self.image('miptsite.jpg', 10, 10, 25)
+        self.add_font('DejaVu', '', 'fonts/DejaVuSansCondensed.ttf', uni=True)
+        self.set_font('DejaVu', '', 14)
+        self.cell(80)
+        self.cell(30, 10, str('Бронирование аудитории'), 0, 0, 'C')
+        self.ln(20)
+
+    # Page footer
+    def footer(self):
+        self.set_y(-15)
+        self.add_font('DejaVu', '', 'fonts/DejaVuSansCondensed.ttf', uni=True)
+        pdf.set_font('DejaVu', '', 14)
+        self.cell(0, 10, 'Администрация сервиса бронирования аудиторий МФТИ', 0, 0, 'C')
 
 
 def sendEmail(title, text, address):
