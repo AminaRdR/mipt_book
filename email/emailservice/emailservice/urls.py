@@ -22,13 +22,17 @@ from mainemail.views import \
     index_kafka_get, \
     send_test, \
     index_kafka_registration, \
-    send_email
+    send_email, \
+    make_pdf_for_user_booking, \
+    send_email_booking
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('send_test/', send_test),
     path('send_email/', send_email),
+    path('send_email_booking/', send_email_booking),
     # path('send_weekly/', send_weekly),
+    path('make_pdf/', make_pdf_for_user_booking),
     path('kafka_start/', index_kafka_send),
     path('kafka_get/', index_kafka_get),
     path('kafka_registration/', index_kafka_registration),

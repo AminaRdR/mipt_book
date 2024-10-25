@@ -13,11 +13,31 @@ def send_verification_email(user_id):
 
 
 @app.task
-def send_task_email(email_address: str, email_text: str, email_title: str):
+def send_task_email(
+        email_address: str,
+        email_text: str,
+        email_title: str,
+        user_name="Александр Сергеевич",
+        aud_name="524 ГК",
+        start_time="18:35",
+        end_time="23:59",
+        pair_number="3",
+        bb_number=5,
+        preferences_list="свежий воздух, тихая музыка"):
     try:
-        sendEmail(email_title, email_text, email_address)
+        sendEmail(
+            email_title,
+            email_text,
+            email_address,
+            user_name,
+            aud_name,
+            start_time,
+            end_time,
+            pair_number,
+            bb_number,
+            preferences_list)
     except Exception as e:
-        print(e)
+        log(e, "e")
 
 
 @app.task
