@@ -311,14 +311,15 @@ def get_book_audience_response(
             number_bb=number_bb)
         email_title = f"Бронирование аудитории {number}ГК"
         # send_email(email_address, email_text, email_title)
+        log(f"TSA={TIME_SLOT_ARR} pn={pair_number} ts={time_slot}", "i")
         send_email_booking(
             email_address,
             email_text,
             email_title,
-            user_name=f"{user.first_name} {user.last_name}",
+            user_name=f"{new_book.user.username}",
             aud_name=number,
-            start_time=time_slot,
-            end_time=TIME_SLOT_DICT[min(TIME_SLOT_ARR[time_slot]+pair_number, 13)],
+            start_time=TIME_SLOT_DICT[time_slot],
+            end_time=TIME_SLOT_DICT[min(time_slot+pair_number, 13)],
             pair_number=pair_number,
             bb_number=number_bb,
             preferences_list="тепло, хорошо"
