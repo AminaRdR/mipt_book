@@ -11,7 +11,8 @@ import datetime
 from .config import \
     get_booking_text, \
     TIME_SLOT_DICT, \
-    ADMIN_FOOTER_INFO
+    ADMIN_FOOTER_INFO, \
+    TIME_SLOT_ARR
 
 
 async def make_auth_request(token):
@@ -73,6 +74,66 @@ async def check_token(token: str):
             "result": True,
             "value": res[0]
         }
+
+
+async def send_email_make_booking(email_address, email_text, email_title, user_name, aud_name, start_time, end_time, pair_number, bb_number, preferences_list):
+    web_address = "https://mipt.site"
+    # web_address = "https://127.0.0.1"
+    # web_address = "https://localhost"
+
+    retries = Retry(
+        total=5,
+        backoff_factor=0.1,
+        status_forcelist=[ 500, 502, 503, 504 ])
+
+    adapter = HTTPAdapter(max_retries=retries)
+    session = requests.Session()
+    session.mount('https://', adapter)
+
+    response = session.post(
+        web_address + ":8083/send_email_booking/",
+        data={
+            "type":"send_email",
+            "email_address": email_address,
+            "email_text": email_text,
+            "email_title": email_title,
+            "user_name": user_name,
+            "aud_name": aud_name,
+            "start_time": start_time,
+            "end_time": end_time,
+            "pair_number": pair_number,
+            "bb_number": bb_number,
+            "preferences_list": preferences_list
+        },
+        verify=False,
+        headers={"Accept": "application/json"})
+    response.encoding = 'utf-8'
+
+    log(f"Email отправлен. A:{email_address}, T:{email_title}", "i")
+
+    return response
+
+
+async def send_email_prev_booking(email_address, email_text, email_title, user_name, aud_name, start_time, end_time, pair_number, bb_number, preferences_list):
+    response = asyncio.create_task(send_email_make_booking(email_address, email_text, email_title, user_name, aud_name, start_time, end_time, pair_number, bb_number, preferences_list))
+
+    res = await asyncio.gather(response)
+    return res
+
+
+def send_email_booking(
+        email_address,
+        email_text,
+        email_title,
+        user_name="Александр Сергеевич",
+        aud_name="524 ГК",
+        start_time="18:35",
+        end_time="23:59",
+        pair_number="3",
+        bb_number=5,
+        preferences_list="свежий воздух, тихая музыка"):
+    send_email_result = asyncio.run(send_email_prev_booking(email_address, email_text, email_title, user_name, aud_name, start_time, end_time, pair_number,bb_number, preferences_list))
+    return send_email_result
 
 
 async def send_email_make(email_address, email_text, email_title):
@@ -249,7 +310,20 @@ def get_book_audience_response(
             audience=number,
             number_bb=number_bb)
         email_title = f"Бронирование аудитории {number}ГК"
-        send_email(email_address, email_text, email_title)
+        # send_email(email_address, email_text, email_title)
+        log(f"TSA={TIME_SLOT_ARR} pn={pair_number} ts={time_slot}", "i")
+        send_email_booking(
+            email_address,
+            email_text,
+            email_title,
+            user_name=f"{new_book.user.username}",
+            aud_name=number,
+            start_time=TIME_SLOT_DICT[time_slot],
+            end_time=TIME_SLOT_DICT[min(time_slot+pair_number, 13)],
+            pair_number=pair_number,
+            bb_number=number_bb,
+            preferences_list="тепло, хорошо"
+        )
 
         return Response(
             {

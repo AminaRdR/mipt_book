@@ -14,7 +14,6 @@ RUN pip install confluent_kafka
 RUN pip install kafka-python
 RUN pip install aiohttp
 
-
 COPY . .
 
 EXPOSE 8000

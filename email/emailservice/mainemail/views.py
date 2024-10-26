@@ -5,7 +5,10 @@ from django.http import JsonResponse
 from confluent_kafka import Consumer, KafkaError
 from confluent_kafka import Producer
 
-from mainemail.services import sendEmail, log
+from mainemail.services import \
+    sendEmail, \
+    log, \
+    make_pdf
 from mainemail.tasks import \
     send_verification_email, \
     send_task_email
@@ -44,6 +47,12 @@ def send_test(request):
 
 
 @csrf_exempt
+def make_pdf_for_user_booking(request):
+    make_pdf()
+    return JsonResponse({"result": True})
+
+
+@csrf_exempt
 @api_view(('POST', 'GET'))
 def send_email(request):
     if request.method == 'POST':
@@ -55,6 +64,42 @@ def send_email(request):
                 email_title = data_request.get('email_title')
                 log(f"Отправка сообщения через форму. A:{email_address}, Text:{email_text}, Title:{email_title}", "i")
                 send_task_email.delay(email_address, email_text, email_title)
+                return JsonResponse({'result': 'Email sent successfully'})
+        except ConnectionError as e:
+            log(f"ConnectionError. Error:{e}", "e")
+            return Response(
+                {"Error": "ConnectionError", "value": str(e)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as e:
+            log(f"Error:{e}", "e")
+            return Response({"Error": "Error", "value": str(e)},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    if request.method == 'GET':
+        return render(request, 'email_test/index_send.html')
+
+
+@csrf_exempt
+@api_view(('POST', 'GET'))
+def send_email_booking(request):
+    if request.method == 'POST':
+        data_request = request.POST  # json.loads(list(request.POST.dict())[0])
+        try:
+            if data_request.get('type') == "send_email":
+                email_address = data_request.get('email_address')
+                email_text = data_request.get('email_text')
+                email_title = data_request.get('email_title')
+                log(f"Отправка сообщения через форму. A:{email_address}, Text:{email_text}, Title:{email_title}", "i")
+                send_task_email.delay(
+                    email_address,
+                    email_text,
+                    email_title,
+                    user_name=data_request.get('user_name', ''),
+                    aud_name=data_request.get('aud_name', ''),
+                    start_time=data_request.get('start_time', ''),
+                    end_time=data_request.get('end_time', ''),
+                    pair_number=data_request.get('pair_number', ''),
+                    bb_number=data_request.get('bb_number', ''),
+                    preferences_list=data_request.get('preferences_list', ''))
                 return JsonResponse({'result': 'Email sent successfully'})
         except ConnectionError as e:
             log(f"ConnectionError. Error:{e}", "e")
