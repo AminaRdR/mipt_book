@@ -32,3 +32,4 @@ db.sqlite3
 
 # proof
 proof/
+**/*.pdf
