@@ -224,11 +224,6 @@ def index_user_wallet(request):
     #   "type":     "create_user_wallet",
     #   "username": "test_user"
     # }
-    # logger.debug('')
-    # logger.info('')
-    # logger.warning('')
-    # logger.error('')
-    # logger.critical('')
     if request.method == 'POST':
         if request.POST.get('type') == "create_user_wallet":
             token = request.POST['token']
