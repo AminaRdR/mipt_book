@@ -198,6 +198,10 @@ def edit_user_name(request):
                             status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
+def get_usrname_by_email(email):
+    return str(email).split("@")[0]
+
+
 @api_view(['POST', 'GET'])
 def oauth_yandex(request):
     if request.method == 'GET':
@@ -212,16 +216,16 @@ def oauth_yandex(request):
         }
         
         response = requests.get(url, params=params)
-        log(response.status_code, "i")
+        log(f"status_code={response.status_code}", "i")
 
         if response.status_code == 200:
-            log(response.json(), "i")
-            
-            log(f"== {response.json().get('default_email')}", "i")
+            oauth_email = response.json().get('default_email', '')
+            log(f"oauth_email={oauth_email} response={response.json()}", "i")
 
-            if len(User.objects.filter(username=response.json().get("default_email"))) == 0: 
-                new_user = User.objects.create_user(response.json().get("default_email"))
-                new_user.email = response.json().get("default_email")
+            if len(User.objects.filter(username=oauth_email)) == 0: 
+                log(f"Регистрация пользоватея: {oauth_email}", "i")
+                new_user = User.objects.create_user(get_usrname_by_email(oauth_email))
+                new_user.email = oauth_email
                 new_user.first_name = response.json().get("first_name").split(" ")[0]
             
                 if len(response.json().get("first_name").split(" ")) > 1:

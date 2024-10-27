@@ -270,6 +270,7 @@ def get_book_audience_response(
         number_bb: int,
         pair_number: int,
         time_slot: int):
+    log(f"BOOK_AUDIENCE number={number} user={user} email={email} number_bb={number_bb} pair_number={pair_number} time_slot={time_slot}", "i")
     new_book = Book(
         audience=get_audience_by_number(number),
         user=get_user_by_username(user),

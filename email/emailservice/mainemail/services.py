@@ -3,6 +3,7 @@ from django.core.mail import EmailMessage
 from django.core.mail import EmailMultiAlternatives
 from emailservice.settings import EMAIL_HOST_USER
 import logging
+import os
 import datetime
 from fpdf import FPDF
 
@@ -60,7 +61,13 @@ def make_pdf(
     pdf.cell(1, 10, f"с правилами бронирования аудиторий Вы можете озникомиться на сайте: ", 0, 1)
     pdf.cell(1, 10, f"https://mipt.site/info", 0, 1)
 
-    file_name = f"Подтверждение {user_name} {aud_name} {start_time} {pair_number}.pdf"
+    file_name = f"proof/{datetime.date.today().isoformat()}/{start_time}/Подтверждение_{user_name}_{aud_name}_{end_time}_{pair_number}.pdf"
+    log(f"filename='{file_name}'", "i")
+    
+    directory = os.path.dirname(file_name)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     pdf.output(file_name)
     return file_name
 
