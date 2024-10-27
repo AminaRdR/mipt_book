@@ -233,10 +233,11 @@ def index_user_wallet(request):
                 if check_token_result["result"]:
                     update_email_by_token(check_token_result)
                     username = str(request.POST.get('username', None))
+                    email = str(request.POST.get('email', ''))
                     username.replace('Пользователь: ', '')
                     log(f"Username for register: '{username}'", "i")
                     if username is not None: # and username == check_token_result["value"]["username"]:
-                        user_wallet = create_user_wallet(username, token=token)
+                        user_wallet = create_user_wallet(username, token=token, email=email)
                         if user_wallet:
                             log(f"User wallet created. Id:{user_wallet.id}, Name:{user_wallet.username}", "i")
                             return Response(

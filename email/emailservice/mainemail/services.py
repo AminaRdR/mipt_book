@@ -72,7 +72,7 @@ def make_pdf(
     return file_name
 
 
-def sendEmail(title, text, address,
+def send_booking_email(title, text, address,
               user_name="Александр Сергеевич",
               aud_name="524 ГК",
               start_time="18:35",
@@ -81,13 +81,6 @@ def sendEmail(title, text, address,
               bb_number=5,
               preferences_list="свежий воздух, тихая музыка"):
     log(f"Send: {str(title)[:10]} {str(text)[:10]} EMAIL HOST: {EMAIL_HOST_USER} ADDRESS:{address}", "i")
-    # send_mail(
-    #     title,
-    #     text,
-    #     EMAIL_HOST_USER,
-    #     [address],
-    #     fail_silently=False,
-    # )
     message = EmailMultiAlternatives(
         title,
         text,
@@ -95,6 +88,17 @@ def sendEmail(title, text, address,
         [address]
     )
     message.attach_file(make_pdf(user_name, aud_name, start_time, end_time, pair_number, bb_number, preferences_list))
+    message.send()
+
+
+def send_text_email(title, text, address):
+    log(f"Send: {str(title)[:10]} {str(text)[:10]} EMAIL HOST: {EMAIL_HOST_USER} ADDRESS:{address}", "i")
+    message = send_mail(
+        title,
+        text,
+        EMAIL_HOST_USER,
+        [address]
+    )
     message.send()
 
 

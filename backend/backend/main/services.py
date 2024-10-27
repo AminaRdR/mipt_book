@@ -150,19 +150,21 @@ async def send_email_make(email_address, email_text, email_title):
     session = requests.Session()
     session.mount('https://', adapter)
 
-    response = session.post(
-        web_address + ":8083/send_email/",
-        data={
-            "type":"send_email",
+    data = {
+            "type":"send_text_email",
             "email_address":email_address,
             "email_text":email_text,
             "email_title": email_title
-        },
+        }
+
+    response = session.post(
+        web_address + ":8083/send_email/",
+        data=data,
         verify=False,
         headers={"Accept": "application/json"})
     response.encoding = 'utf-8'
 
-    log(f"Email отправлен. A:{email_address}, T:{email_title}", "i")
+    log(f"Email отправлен. A:{email_address}, T:{email_title} data={data}", "i")
 
     return response
 
@@ -206,15 +208,23 @@ def get_username_by_username(username):
         return None
 
 
-def create_user_wallet(username, token=""):
+def get_bb_amount_by_email(email=""):
+    log(f"============={email}", "i")
+    if "phystech.edu" in email:
+        return 28
+    return 0
+
+
+def create_user_wallet(username, token="", email=""):
     log(f"Начало создания кошелька пользователя. U:{username}, T{token}", "d")
     if len(UsersWallet.objects.filter(username=username)) != 0:
         log(f"При создании кошелька пользователь не был найден. U:{username}", "e")
         return False
     users_wallet = UsersWallet(
         username=username,
+        email=email,
         token=token,
-        number_bb=28
+        number_bb=get_bb_amount_by_email(email)
     )
     users_wallet.save()
     log(f"Кошелёк пользователя успешно создан. U:{username}", "d")

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import AbstractUser
+from django.contrib.postgres import fields
 
 
 class Access(models.Model):
@@ -34,6 +35,12 @@ class InstituteGroup(models.Model):
         "Institute",
         on_delete=models.CASCADE,
         related_name="institute",
+        blank=True,
+        null=True)
+    institute_group_day_history = models.ForeignKey(
+        "InstituteGroupDayHistory",
+        on_delete=models.CASCADE,
+        related_name="instituteGroupDayHistory",
         blank=True,
         null=True)
 
@@ -73,6 +80,35 @@ class User(AbstractUser):
         return f'{self.username}'
 
 
+class InstituteGroupDayHistory(models.Model):
+    institute_group = models.ForeignKey(
+        "InstituteGroup",
+        on_delete=models.CASCADE,
+        related_name="institute_group",
+        blank=True,
+        null=True)
+    week_pairs = fields.ArrayField(
+        fields.ArrayField(  # дни недели
+            fields.ArrayField(  # пары
+                models.CharField(max_length=255, blank=True),
+                max_length=8,
+                blank=True,
+                null=True
+            ),
+            max_length=20,
+            blank=True,
+            null=True
+        ),
+        max_length=7,
+        blank=True,
+        null=True
+    )
+    visibility = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'InstituteGroupDayHistory|I:{self.institute_group}'
+
+
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
     search_fields = ("id", "name", "description")
@@ -93,6 +129,11 @@ class InstituteGroupAdmin(admin.ModelAdmin):
     search_fields = ("id", "name", "description", "institute")
     list_display = ("id", "name", "institute", )
 
+@admin.register(InstituteGroupDayHistory)
+class InstituteGroupDayHistoryAdmin(admin.ModelAdmin):
+    search_fields = ("id",)
+    list_display = ("id", "institute_group", )
+
 @admin.register(Preferences)
 class PreferencesAdmin(admin.ModelAdmin):
     search_fields = ("id", "name", "description")
@@ -101,4 +142,4 @@ class PreferencesAdmin(admin.ModelAdmin):
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     search_fields = ("id", "username", "first_name", "second_name", "third_name", "institute_group", "user_role", "book_rate")
-    list_display = ("id", "username", "institute_group", "user_role", "book_rate",)
+    list_display = ("id", "username", "email", "institute_group", "user_role", "book_rate",)
