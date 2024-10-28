@@ -490,6 +490,9 @@ def check_queue_list(time_slot: int):
     queue_list = make_queue_list(time_slot)
     queue = sorted(queue_list, key=lambda item: int(item["number_bb"]), reverse=True)
 
+    for queue_item in queue:
+        queue_item["user_wallet"].number_bb = max(int(queue_item["user_wallet"].number_bb) - int(queue_item["number_bb"]), 0)
+
     email_list = make_email_list(queue, number_of_audiences)
     audience_list = make_audience_list(queue, number_of_audiences)
 
