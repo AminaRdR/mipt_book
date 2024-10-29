@@ -35,7 +35,10 @@ let username = ref<string|null>(null);
 // const web_site = "127.0.0.1";
 const web_site = inject('web_site');
 
+const showPopupAuthBBInfo = ref(false);
 const showPopupBookingInfo = ref(false);
+const showPopupAudNumberInfo = ref(false);
+const showPopupTimeSlotInfo = ref(false);
 
 onMounted(()=>{
   token.value = localStorage.getItem("auth-token");
@@ -141,13 +144,25 @@ async function sendForm(){
       }
     }
 
+const showAuthBBInfo = () => { 
+	showPopupAuthBBInfo.value = true; 
+};
+const hideAuthBBInfo = () => { showPopupAuthBBInfo.value = false; };
+
+const showAudNumberInfo = () => { showPopupAudNumberInfo.value = true; };
+const hideAudNumberInfo = () => { showPopupAudNumberInfo.value = false; };
+
+const showTimeSlotInfo = () => { showPopupTimeSlotInfo.value = true; };
+const hideTimeSlotInfo = () => { showPopupTimeSlotInfo.value = false; };
 
 </script>
 
 <template>
+  <div style="padding-bottom: 70px;">
   <div class="centered-div">
     <Header />
-
+	    <!-- <p style="color: red;">Сервис запущен в тестовом режиме, учитывает раписание занятий и стремиться к отображению максимально точной картины занятости. Однако часть студентов пока не осведомлена об этом удобном способе бронирования. Если выбранная аудитория занята, вам автоматически будет предложена другая подходящая аудитория.</p> -->
+	    <p style="color: red;">Сервис запущен в тестовом режиме и в его работе возможны ошибки. Писать на почту: info@mipt.site</p>
     <form @submit.prevent="sendForm">
 
       <BookAudience @select-audience="selectAudience"/>
@@ -156,13 +171,14 @@ async function sendForm(){
 
       <div class="container-head" style="height: 60px;">
         <div class="left-element">
-          <h3>Автоматические ББ</h3>
+		<h3>Автоматические ББ      <!--<img class="icon-pic image_for_click" src="@/assets/info.svg">--></h3>
         </div>
         <div class="right-element">
           <label class="toggle-switch">
-            <input type="checkbox">
+            <input type="checkbox" checked>
             <span class="slider"></span>
           </label>
+	  <img @click="showAuthBBInfo()" class="icon-pic image_for_click" src="@/assets/info.svg">
         </div>
       </div>
 
@@ -188,10 +204,51 @@ async function sendForm(){
     </transition>
 
 
+            <transition name="fade-rate-info">
+                <div v-if="showPopupAuthBBInfo" class="popup button-width">
+                    <div class="popup-content">
+			    <!-- <button @click="hideAuthBBInfo" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button> -->
+                        
+			<p>
+				<a href="https://mipt.site/info">ПОДРОБНЕЕ ТУТ</a>
+			</p>
+			
+			<p>
+				Баллы Бронирования (ББ) начилсяются студентам МФТИ для бронирования аудиторий. Всего не более 28 ед. и +4ББ/сутки. 
+				При автоматиеском выставлении баллов
+				бронирования система определяет число необходимых баллов для бронирования аудитории с шансом 90%. После чего списывает
+				соответствующее число. Изначально 1ББ = 1паре, но со временем и загруженностью число может меняться.
+			</p>
+			<p>
+				Совместное бронирование аудиторий позволяет делить число баллов бронирования на число студентов в аудитории.
+			</p>
 
+			<button @click="hideAuthBBInfo" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+                    </div>
+                </div>
+        </transition>
+	
+
+
+
+
+
+  </div>
 </template>
 
 <style scoped>
+@media (max-width: 768px) {
+        .button-width {
+                min-width: 80vw;
+        }
+}
+
+@media (min-width: 768px) {
+        .button-width {
+                max-width: 30vw;
+        }
+}
+
 .container-head {
   position: relative; /* Позиционирование относительно контейнера */
   height: 100px; /* Высота контейнера (для демонстрации) */
@@ -289,5 +346,18 @@ async function sendForm(){
   opacity: 0;
 }
 
+
+.icon-pic {
+  width: 18px;
+  float: right;
+  border: 3px solid #ccc;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.image_for_click{
+  cursor: pointer;
+}
 
 </style>

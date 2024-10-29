@@ -150,7 +150,7 @@ def edit_user_name(request):
                         return Response(serializer.data, status=status.HTTP_406_NOT_ACCEPTABLE)
                 elif data_request.get('type') == "edit_user_group":
                     log(f"Начало редактирования группы пользователя", "i")
-                    group_name  = data_request.get("group", "Б02-001")
+                    group_name  = data_request.get("group", "Б00-000")
                     group = InstituteGroup.objects.filter(name=group_name)
                     if len(group) == 1:
                         user.institute_group = group[0]
@@ -234,7 +234,7 @@ def oauth_yandex(request):
             
                 new_user.last_name = response.json().get("last_name")
                 new_user.token = data_request.get("access_token")
-                new_user.institute_group = InstituteGroup.objects.get(name="Б02-003")
+                new_user.institute_group = InstituteGroup.objects.get(name="Б00-000")
                 new_user.user_role = Role.objects.get(name="Пользователь")
                 new_user.save()
 

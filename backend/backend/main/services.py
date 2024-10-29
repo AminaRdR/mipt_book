@@ -291,6 +291,7 @@ def get_book_audience_response(
         booking_time=datetime.datetime.now().time(),
         visibility=1)
     new_book.save()
+    log(f"++++++{number}", "i")
     audience = Audience.objects.get(number=number)
     if audience.day_history.pair[pair_number][1] == "Свободно":
         # Останавливаем мгновенные бронирования

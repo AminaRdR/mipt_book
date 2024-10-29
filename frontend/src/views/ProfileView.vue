@@ -387,12 +387,11 @@ async function logAuth(){
 </script>
 
 <template>
+  <div style="padding-bottom: 70px;">
   <div class="centered-div">
     <div v-if="token == null">
       <h3>Для доступа в личный кабинет нужно авторизоваться</h3>
     </div>
-
-
 
     <template v-else>
       <Header />
@@ -503,6 +502,7 @@ async function logAuth(){
         </div>
     </div>
 
+    </div>
 </template>
 
 <style scoped>

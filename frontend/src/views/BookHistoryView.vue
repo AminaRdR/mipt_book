@@ -239,6 +239,7 @@ async function loadBookHistory(){
      </table>
 
     <h2>История бронирования</h2>
+    <div style="padding-bottom: 70px;">
     <table class="booking-table" style="padding-bottom: 70px;">
       <thead>
         <tr>
@@ -257,6 +258,7 @@ async function loadBookHistory(){
         </tr>
       </tbody>
     </table>
+    </div>
 
   <div class="notification-container">
       <div v-for="actual_item in actual_book_items">

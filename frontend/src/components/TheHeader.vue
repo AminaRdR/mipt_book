@@ -72,7 +72,7 @@ async function loadBBNumber(){
 <template>
   <div class="container-head">
     <a href="/info" class="logo">
-        <div class="left-element button-lk">ББ: {{number_bb}} единиц</div>
+	    <div class="left-element button-lk">ББ: {{number_bb}} единиц <!-- <img class="icon-pic image_for_click" src="@/assets/info.svg"> --></div>
     </a>
 
     <a href="/profile" class="logo">
@@ -101,4 +101,20 @@ async function loadBBNumber(){
   .right-element {
     right: 0; /* Привязываем к правому краю */
   }
+
+
+.icon-pic {
+  width: 18px;
+  float: right;
+  border: 2px solid #fff;
+  border-radius: 9px;
+  padding: 2px;
+}
+
+.image_for_click{
+  cursor: pointer;
+}
+
+
+
 </style>

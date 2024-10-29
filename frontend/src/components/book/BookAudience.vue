@@ -77,10 +77,26 @@ function selectRandom(){
   is_random_selected.value = true; // it's important to place it after selecting;
 }
 
+const showPopupAudNumberInfo = ref(false);
+const showAudNumberInfo = () => { showPopupAudNumberInfo.value = true; };
+const hideAudNumberInfo = () => { showPopupAudNumberInfo.value = false; };
+
+
 </script>
 
 <template>
-  <h3>Номер аудитории</h3>
+	<div class="container-head" style="height: 60px;">
+        	<div class="left-element">
+			<h3>Номер аудитории</h3>
+        	</div>
+        	
+		<div class="right-element">
+          		<img @click="showAudNumberInfo" class="icon-pic image_for_click" src="@/assets/info.svg">
+        	</div>
+      </div>
+      <!-- <h3>Номер аудитории</h3>-->
+  
+
   <div class="container">
     <template v-for="building in building_arr" :key="building.name">
       <div class="item button" :class="{selected: building.name== building_name_selected}" @click="selectBuilding(building)"> {{building.name}} </div>
@@ -93,9 +109,60 @@ function selectRandom(){
            :class="{ selected: audience.number == audience_number_selected }" @click="selectAudience(audience)"> {{audience.number}} {{audience.building.name}} </div>
     </template>
   </div>
+
+        <transition name="fade-rate-info">
+                <div v-if="showPopupAudNumberInfo" class="popup button-width">
+                    <div class="popup-content">
+			    <!-- <button @click="hideAudNumberInfo" type="reset" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button> -->
+
+                        <p>
+				В тестовом режиме доступно бронирование аудиторий на 4-м и 5-м этажах ГК.
+				Бронирование возможно в свободное от запланированных учебным управлением
+				временные слоты. Подробнее загруженность аудиторий можно посмотреть: 
+				<a href="https://mipt.site/display/">здесь</a>
+			</p>
+
+                        <button @click="hideAudNumberInfo" type="reset" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+                    </div>
+                </div>
+        </transition>
+
 </template>
 
 <style scoped>
+
+@media (max-width: 768px) {
+        .button-width {
+                min-width: 80vw;
+        }
+}
+
+@media (min-width: 768px) {
+        .button-width {
+                max-width: 30vw;
+        }
+}
+
+.container-head {
+  position: relative; /* Позиционирование относительно контейнера */
+  height: 100px; /* Высота контейнера (для демонстрации) */
+}
+
+.left-element, .right-element {
+  position: absolute;
+  top: 50%; /* Выравниваем по вертикали по центру */
+  transform: translateY(-50%); /* Корректировка вертикального выравнивания */
+}
+
+.left-element {
+  left: 0; /* Привязываем к левому краю */
+}
+
+.right-element {
+  right: 0; /* Привязываем к правому краю */
+}
+
+
 .button {
   background-color: white;
   border: none;
@@ -106,4 +173,56 @@ function selectRandom(){
 .selected, .selected.button {
   background-color: lightblue;
 }
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.popup-content {
+  max-height: 70vh; /*Adjust as needed */
+  overflow-y: auto;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-active-rate-info,
+.fade-leave-active-rate-info {
+  transition: opacity 0.3s;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-rate-info,
+.fade-leave-to-rate-info {
+  opacity: 0;
+}
+
+.icon-pic {
+  width: 18px;
+  float: right;
+  border: 3px solid #ccc;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.image_for_click{
+  cursor: pointer;
+}
+
+
 </style>
