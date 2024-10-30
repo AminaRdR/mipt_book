@@ -45,6 +45,8 @@ let actual_book_items: Ref<ActualBookItem[]> = ref([]);
 // const web_site = "127.0.0.1";
 const web_site = inject('web_site');
 
+const router = useRouter();
+
 let book_history: Ref<BookItem[]> = ref([]);
 
 let bookings: Ref<
@@ -106,13 +108,67 @@ async function loadActualBookHistory(){
   }
 }
 
-async function cancelBooking(audience_number: string){
+async function cancel_Booking(audience_number: string){
   try {
     const response = await fetch("https://" + web_site + ":8000/stop_booking/",{
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: JSON.stringify({
-        "type": "stop_booking",
+        "type": "cancel_booking",
+        'token': token.value,
+        'audience': audience_number // form_audience_name.value
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Сеть ответила с ошибкой: ' + response.status);
+    }
+    if (response.ok) {
+        const data = await response.json();
+        console.log('Ответ от сервера:', data);
+    } else {
+        console.error('Ошибка запроса:', response.status);
+    }
+
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+  }
+}
+
+async function finalize_Booking(audience_number: string){
+  try {
+    const response = await fetch("https://" + web_site + ":8000/stop_booking/",{
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: JSON.stringify({
+        "type": "finalize_booking",
+        'token': token.value,
+        'audience': audience_number // form_audience_name.value
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Сеть ответила с ошибкой: ' + response.status);
+    }
+    if (response.ok) {
+        const data = await response.json();
+        console.log('Ответ от сервера:', data);
+    } else {
+        console.error('Ошибка запроса:', response.status);
+    }
+
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+  }
+}
+
+async function action_Booking(audience_number: string, request_type: string){
+  try {
+    const response = await fetch("https://" + web_site + ":8000/stop_booking/",{
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: JSON.stringify({
+        "type": request_type,
         'token': token.value,
         'audience': audience_number // form_audience_name.value
       })
@@ -189,6 +245,7 @@ async function loadBookHistory(){
       }
 
       setTimeout(hideNotification, 2000, String(audience_number));
+      setTimeout(router.go, 2000, 0);
     }
 
     function showNotification(notificationId: string) {
@@ -215,6 +272,31 @@ async function loadBookHistory(){
     <Header />
 
   </div>
+
+
+ 
+    <div style="overflow-x: clip;" v-for="actual_item in actual_book_items" :id="`tr_${actual_item.audience.number}`" class="container">
+        <div class="auditorium">
+            <h3>Аудитория {{actual_item.audience.number}} ГК</h3>
+            <div class="details">
+                <span>Дата: <strong>{{actual_item.date}}</strong></span></div><div class="details">
+                <span>Время: <strong>{{actual_item.booking_time.slice(0, 8)}}</strong></span>
+            </div>
+            <div class="details">
+		<span>Аудитория: <strong>{{actual_item.audience.number}}</strong></span></div><div class="details">
+                <span>Номер пары: <strong>{{actual_item.pair_number}}</strong></span>
+            </div>
+            <div style="flex-wrap: wrap; display: flex; gap: 1vw;">
+				<button @click="action_Booking(actual_item.audience.number, 'cancel_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 20vw; background-color: #DC3545;">Отменить</button>
+				<button @click="action_Booking(actual_item.audience.number, 'finalize_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 20vw; background-color: #FFAB42;">Завершить</button>
+				<button @click="action_Booking(actual_item.audience.number, 'not_my_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 50vw; background-color: #203979;">Аудитория занята не мной</button>
+            <button @click="action_Booking(actual_item.audience.number, 'this_is_my_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 92vw;">Ура, я в аудитории</button>
+        	</div>
+        </div>
+    </div>
+
+
+<!-- 
     <h2>Актуальные бронирования:</h2>
     <table class="booking-table">
       <thead>
@@ -237,6 +319,8 @@ async function loadBookHistory(){
         </tr>
       </tbody>
      </table>
+-->
+
 
     <h2>История бронирования</h2>
     <div style="padding-bottom: 70px;">
@@ -376,5 +460,64 @@ async function loadBookHistory(){
     .item_hidden{
         visibility: hidden;
     }
+
+        body {
+            font-family: sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 0px;
+        }
+
+        .auditorium {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 92vw;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .auditorium h3 {
+            margin-top: 0;
+        }
+
+        .auditorium .details {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .auditorium .details span {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .auditorium .details strong {
+            font-weight: bold;
+        }
+
+        .auditorium .button {
+            display: block;
+            background-color: #4CAF50;
+            color: white;
+            padding-top: 10px;
+	    padding-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .auditorium .button:hover {
+            background-color: #45a049;
+        }
+
 
 </style>

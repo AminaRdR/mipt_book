@@ -333,10 +333,10 @@ def index_stop_booking(request):
     # }
     if request.method == 'POST':
         data_request = json.loads(list(request.POST.dict())[0])
-        if data_request.get('type') == "stop_booking":
+        if data_request.get('type') == "cancel_booking":
             token = data_request.get('token', '')
             audience_number = data_request.get('audience', '')
-            log(f"Start stopping booking. Token:{token}, Audience:{audience_number}", "i")
+            log(f"CANCEL BOOKING: token={token} audience_number={audience_number}", "i")
             try:
                 check_token_result = asyncio.run(check_token(token))
                 if check_token_result["result"]:
@@ -384,6 +384,58 @@ def index_stop_booking(request):
                 log(f"Error:{e}", "e")
                 return Response({"Error": "Error", "value": str(e)},
                                 status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        elif data_request.get('type') == "finalize_booking":
+            token = data_request.get('token', '')
+            audience_number = data_request.get('audience', '')
+            log(f"FINALIZE BOOKING: token={token} audience_number={audience_number}", "i")
+            try:
+                check_token_result = asyncio.run(check_token(token))
+                if check_token_result["result"]:
+                    update_email_by_token(check_token_result)
+                    books = Book.objects.filter(audience__number=audience_number)
+                    booking_number = len(books)
+                    if booking_number == 1:
+                        book_item = Book.objects.get(audience__number=audience_number)
+                        email_address = book_item.user.email # book_item.user.email "kristal.as@phystech.edu"
+                        username = book_item.user.username
+                        book_item.to_history()
+
+                        # Собираем данные для отправки email сообщения
+                        email_text = get_stop_booking_text(username, audience_number)
+                        email_title = f"Прекращение бронирования аудитории {audience_number}"
+                        send_email(email_address, email_text, email_title)
+
+                        log(f"Stopping booking ended with success.", "i")
+                        return Response(
+                            {
+                                "result": True,
+                                "audience": audience_number,
+                                "token": token
+                            },
+                            status=status.HTTP_201_CREATED)
+                    else:
+                        for booking in books:
+                            booking.to_history()
+                        log(f"Double booking of the audience: {audience_number}. Booking number: {booking_number}", "e")
+                        return Response(
+                            {
+                                "Error": "BookingError",
+                                "value": f"length must be is 1, you got {booking_number}",
+                                "audience": f"{audience_number}"
+                            },
+                            status=status.HTTP_501_NOT_IMPLEMENTED)
+            except Exception as e:
+                log(f"Error:{e}", "e")
+                return Response({"Error": "Error", "value": str(e)},
+                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        elif data_request.get('type') == "not_my_booking":
+            token = data_request.get('token', '')
+            audience_number = data_request.get('audience', '')
+            log(token, "e")
+            log(audience_number, "e")
+            return Response({"Error": "Error"})
+
         else:
             log(f"BAD_REQUEST_TYPE. Type:{data_request.get('type')}", "e")
             return Response(
