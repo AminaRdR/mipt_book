@@ -333,11 +333,13 @@ def index_stop_booking(request):
     # }
     if request.method == 'POST':
         data_request = json.loads(list(request.POST.dict())[0])
-        if data_request.get('type') == "cancel_booking":
-            token = data_request.get('token', '')
-            audience_number = data_request.get('audience', '')
-            log(f"CANCEL BOOKING: token={token} audience_number={audience_number}", "i")
-            try:
+        try:
+            if data_request.get('type') == "cancel_booking":
+                token = data_request.get('token', '')
+                audience_number = data_request.get('audience', '')
+                
+                log(f"CANCEL BOOKING: token={token} audience_number={audience_number}", "i")
+
                 check_token_result = asyncio.run(check_token(token))
                 if check_token_result["result"]:
                     update_email_by_token(check_token_result)
@@ -375,20 +377,12 @@ def index_stop_booking(request):
                             status=status.HTTP_501_NOT_IMPLEMENTED)
                 else:
                     log(f"Problems with checking token in stop booking. Token:{token}", "e")
-            except ConnectionError as e:
-                log(f"ConnectionError. Error:{e}", "e")
-                return Response(
-                    {"Error": "ConnectionError", "value": str(e)},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE)
-            except Exception as e:
-                log(f"Error:{e}", "e")
-                return Response({"Error": "Error", "value": str(e)},
-                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        elif data_request.get('type') == "finalize_booking":
-            token = data_request.get('token', '')
-            audience_number = data_request.get('audience', '')
-            log(f"FINALIZE BOOKING: token={token} audience_number={audience_number}", "i")
-            try:
+            elif data_request.get('type') == "finalize_booking":
+                token = data_request.get('token', '')
+                audience_number = data_request.get('audience', '')
+                
+                log(f"FINALIZE BOOKING: token={token} audience_number={audience_number}", "i")
+
                 check_token_result = asyncio.run(check_token(token))
                 if check_token_result["result"]:
                     update_email_by_token(check_token_result)
@@ -424,23 +418,38 @@ def index_stop_booking(request):
                                 "audience": f"{audience_number}"
                             },
                             status=status.HTTP_501_NOT_IMPLEMENTED)
-            except Exception as e:
-                log(f"Error:{e}", "e")
-                return Response({"Error": "Error", "value": str(e)},
-                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        elif data_request.get('type') == "not_my_booking":
-            token = data_request.get('token', '')
-            audience_number = data_request.get('audience', '')
-            log(token, "e")
-            log(audience_number, "e")
-            return Response({"Error": "Error"})
+            elif data_request.get('type') == "not_my_booking":
+                token = data_request.get('token', '')
+                audience_number = data_request.get('audience', '')
+                
+                log(f"NOT MY BOOKING: token={token} audience_number={audience_number}", "i")
+                
+                return Response({"Error": "Error"})
+        
+            elif data_request.get('type') == "this_is_my_booking":
+                token = data_request.get('token', '')
+                audience_number = data_request.get('audience', '')
+                
+                log(f"THIS IS MY BOOKING: token={token} audience_number={audience_number}", "i")
 
-        else:
-            log(f"BAD_REQUEST_TYPE. Type:{data_request.get('type')}", "e")
+                return Response({"Error": "Error"})
+            
+            else:
+                log(f"BAD_REQUEST_TYPE. Type:{data_request.get('type')}", "e")
+                return Response(
+                    {"Error": "BAD_REQUEST_TYPE"},
+                    status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+        except ConnectionError as e:
+            log(f"ConnectionError. Error:{e}", "e")
             return Response(
-                {"Error": "BAD_REQUEST_TYPE"},
-                status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+                {"Error": "ConnectionError", "value": str(e)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as e:
+            log(f"Error:{e}", "e")
+            return Response(
+                {"Error": "Error", "value": str(e)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE)
     if request.method == 'GET':
         return render(request, 'book/stop_booking.html')
 

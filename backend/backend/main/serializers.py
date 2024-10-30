@@ -62,7 +62,7 @@ class BookSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['audience', 'number_bb', 'pair_number', 'date', 'booking_time']
+        fields = ['audience', 'number_bb', 'pair_number', 'date', 'booking_time', 'time_slot']
 
     def to_representation(self, instance):
         response = super().to_representation(instance)

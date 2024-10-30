@@ -16,6 +16,26 @@ let form_time_slot = ref<String>("");
 
 const router = useRouter();
 
+interface User {
+    username: string;
+}
+
+interface AudienceItem {
+    number: string;
+    description: string;
+    audience_status: string;
+}
+
+interface ActualBookItem {
+  audience: AudienceItem,
+  user: User,
+  number_bb: number,
+  pair_number: number,
+  date: string,
+  booking_time: string,
+  time_slot: string
+}
+
 function selectAudience(audience: IAudience) {
   form_audience_name.value = audience.number;
 }
@@ -43,6 +63,8 @@ const showPopupTimeSlotInfo = ref(false);
 onMounted(()=>{
   token.value = localStorage.getItem("auth-token");
   username.value = localStorage.getItem("username");
+
+  checkBookHistory();
 
   if (localStorage.getItem("auth-token") == null) {
       setTimeout(()=>{
@@ -95,6 +117,38 @@ async function sendForm(){
     console.error('Ошибка при отправке данных:', error);
   }
 }
+
+
+async function checkBookHistory(){
+  try {
+    const response = await fetch("https://" + web_site + ":8000/base-info/book/?user=" + username.value,{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Сеть ответила с ошибкой: ' + response.status);
+
+      if(response.status == 401){
+        console.log(9);
+      }
+    }
+
+    const data_number = await response.json() as ActualBookItem[];
+        
+    if (data_number.length > 0) {
+	router.push("/book-history/");
+    }
+
+    console.log('Ответ от сервера header actual_book_items:', data_number);
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+  }
+}
+
+
 
   function showNotificationBooked() {
       if (document.getElementById("book_notification")) {
