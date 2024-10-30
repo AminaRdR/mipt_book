@@ -108,60 +108,6 @@ async function loadActualBookHistory(){
   }
 }
 
-async function cancel_Booking(audience_number: string){
-  try {
-    const response = await fetch("https://" + web_site + ":8000/stop_booking/",{
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: JSON.stringify({
-        "type": "cancel_booking",
-        'token': token.value,
-        'audience': audience_number // form_audience_name.value
-      })
-    });
-
-    if (!response.ok) {
-      console.error('Сеть ответила с ошибкой: ' + response.status);
-    }
-    if (response.ok) {
-        const data = await response.json();
-        console.log('Ответ от сервера:', data);
-    } else {
-        console.error('Ошибка запроса:', response.status);
-    }
-
-  } catch (error) {
-    console.error('Ошибка при отправке данных:', error);
-  }
-}
-
-async function finalize_Booking(audience_number: string){
-  try {
-    const response = await fetch("https://" + web_site + ":8000/stop_booking/",{
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: JSON.stringify({
-        "type": "finalize_booking",
-        'token': token.value,
-        'audience': audience_number // form_audience_name.value
-      })
-    });
-
-    if (!response.ok) {
-      console.error('Сеть ответила с ошибкой: ' + response.status);
-    }
-    if (response.ok) {
-        const data = await response.json();
-        console.log('Ответ от сервера:', data);
-    } else {
-        console.error('Ошибка запроса:', response.status);
-    }
-
-  } catch (error) {
-    console.error('Ошибка при отправке данных:', error);
-  }
-}
-
 async function action_Booking(audience_number: string, request_type: string){
   try {
     const response = await fetch("https://" + web_site + ":8000/stop_booking/",{
@@ -294,33 +240,6 @@ async function loadBookHistory(){
         	</div>
         </div>
     </div>
-
-
-<!-- 
-    <h2>Актуальные бронирования:</h2>
-    <table class="booking-table">
-      <thead>
-        <tr>
-          <th>Дата</th>
-          <th>Время</th>
-          <th>Комната</th>
-          <th>Номер пары</th>
-          <th>Действие</th>
-        </tr>
-      </thead>
-      <tbody>
-
-        <tr v-for="actual_item in actual_book_items" :id="`tr_${actual_item.audience.number}`">
-          <td :id="`date_${actual_item.audience.number}`">{{actual_item.date}}</td>
-          <td :id="`time_${actual_item.audience.number}`">{{actual_item.booking_time.slice(0, 8)}}</td>
-          <td :id="`number_${actual_item.audience.number}`">{{actual_item.audience.number}}</td>
-          <td :id="`pair_${actual_item.audience.number}`">{{actual_item.pair_number}}</td>
-          <td :id="`button_${actual_item.audience.number}`"><button class="cancel-button" @click="cancelBooking(actual_item.audience.number);showNotification_id(actual_item.audience.number);">Завершить</button></td>
-        </tr>
-      </tbody>
-     </table>
--->
-
 
     <h2>История бронирования</h2>
     <div style="padding-bottom: 70px;">
