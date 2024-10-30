@@ -28,7 +28,14 @@ onMounted(async () =>{
   //audience_arr.value = await getInfo(web_address+audience_path);
   building_arr.value = await getInfo('https://' + web_site + ':8000'+building_path);
   audience_arr.value = await getInfo('https://' + web_site + ':8000'+audience_path);
+  setTimeout(setDefault, 500, 0);
 });
+
+function setDefault() {
+    building_name_selected.value = building_arr.value[0].name;
+    audience_number_selected.value = audience_arr.value[0].number;
+    emit('select-audience',  audience_arr.value[0]);
+}
 
 async function getInfo(url: string){
   try {

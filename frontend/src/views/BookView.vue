@@ -76,6 +76,11 @@ onMounted(()=>{
           });
       }, 6500);
   }
+  window.scrollTo({
+    top: 1000,
+    behavior: 'smooth'
+  });
+  // document.getElementById('your-element').scrollIntoView({ behavior: 'smooth' });
 });
 
 const showPopupBookingInfo_fun = () => {
@@ -158,6 +163,11 @@ async function checkBookHistory(){
         console.error('Элемент с id "' + "book_notification" + '" не найден');
       }
       setTimeout(hideNotification, 2000, "book_notification");
+      setTimeout(()=>{
+          router.push("/book-history/").then(()=>{
+            router.go(0); // force reload
+          });
+      }, 2000);
     }
 
   function showNotification_id(audience_number: string) {
@@ -229,14 +239,14 @@ const hideTimeSlotInfo = () => { showPopupTimeSlotInfo.value = false; };
         </div>
         <div class="right-element">
           <label class="toggle-switch">
-            <input type="checkbox" checked>
+            <input type="checkbox" required checked>
             <span class="slider"></span>
           </label>
 	  <img @click="showAuthBBInfo()" class="icon-pic image_for_click" src="@/assets/info.svg">
         </div>
       </div>
 
-      <input type="submit" class="button1" value="Забронировать" @click="showNotificationBooked();"><br><br>
+      <input id="your-element" type="submit" class="button1" value="Забронировать" @click="showNotificationBooked();"><br><br>
     </form>
   </div>
 
@@ -412,6 +422,10 @@ const hideTimeSlotInfo = () => { showPopupTimeSlotInfo.value = false; };
 
 .image_for_click{
   cursor: pointer;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 </style>

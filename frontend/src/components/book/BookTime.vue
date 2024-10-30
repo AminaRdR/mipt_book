@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref} from 'vue'
+import {onMounted, ref} from 'vue'
 
 // setup selected time slot
 const emit = defineEmits<{
@@ -36,9 +36,10 @@ let times = ref([
 
 let selected_time = ref<Date>(new Date());
 
-function onMounted(){
-  selected_time.value = getDefaultTime();
-}
+onMounted(()=>{
+    selected_time.value = getDefaultTime();
+    emitSelect();
+});
 
 function isOld(date : Date){
   let now = new Date();

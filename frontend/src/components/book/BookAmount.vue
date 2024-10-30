@@ -32,7 +32,7 @@ const hidePairNumberInfo = () => { showPopupPairNumberInfo.value = false; };
 	  <!-- <h3>Количество пар</h3> -->
   <output>1</output>
   <input type="range" value="1" min="1" max="6" style="width: 80%;"
-         v-model="amount" @input="emitSelect">
+         v-model="amount" @input="emitSelect" required>
   <output>6</output><br><br>
 
 
