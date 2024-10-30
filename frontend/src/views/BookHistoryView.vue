@@ -34,7 +34,8 @@ interface ActualBookItem {
   number_bb: number,
   pair_number: number,
   date: string,
-  booking_time: string
+  booking_time: string,
+  time_slot: string
 }
 
 let actual_book_items: Ref<ActualBookItem[]> = ref([]);
@@ -44,6 +45,24 @@ let actual_book_items: Ref<ActualBookItem[]> = ref([]);
 // const web_site = "localhost";
 // const web_site = "127.0.0.1";
 const web_site = inject('web_site');
+
+const router = useRouter();
+
+const time_slot_dict = [
+    "09:00",
+    "10:45",
+    "12:20",
+    "13:45",
+    "15:30",
+    "17:05",
+    "18:35",
+    "20:00",
+    "22:00",
+    "23:59",
+    "01:30",
+    "03:00",
+    "04:30",
+    "06:00"];
 
 let book_history: Ref<BookItem[]> = ref([]);
 
@@ -62,6 +81,8 @@ let bookings: Ref<
 
 let username = ref<string|null>(null);
 let token = ref<string|null>(null);
+let start_time = ref<string|null>(null);
+let end_time = ref<string|null>(null);
 
 onMounted(()=>{
   token.value = localStorage.getItem("auth-token");
@@ -93,6 +114,10 @@ async function loadActualBookHistory(){
 
     const data_number = await response.json() as ActualBookItem[];
     actual_book_items.value = data_number;
+    
+    start_time.value = time_slot_dict[Number(actual_book_items.value[0].time_slot) - 1];
+    end_time.value = time_slot_dict[Number(actual_book_items.value[0].time_slot) + Number(actual_book_items.value[0].pair_number) - 1];
+    
     // audiences_gk.value = data_number.filter(item => item.building.name == 'ГК');
     // audiences_lk.value = data_number.filter(item => item.building.name == 'ЛК');
 
@@ -106,13 +131,13 @@ async function loadActualBookHistory(){
   }
 }
 
-async function cancelBooking(audience_number: string){
+async function action_Booking(audience_number: string, request_type: string){
   try {
     const response = await fetch("https://" + web_site + ":8000/stop_booking/",{
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: JSON.stringify({
-        "type": "stop_booking",
+        "type": request_type,
         'token': token.value,
         'audience': audience_number // form_audience_name.value
       })
@@ -189,6 +214,7 @@ async function loadBookHistory(){
       }
 
       setTimeout(hideNotification, 2000, String(audience_number));
+      setTimeout(router.go, 2000, 0);
     }
 
     function showNotification(notificationId: string) {
@@ -208,6 +234,11 @@ async function loadBookHistory(){
       }
     }
 
+
+const showPopupAudBookingInfo = ref(false);
+const showAudBookingInfo = () => { showPopupAudBookingInfo.value = true; };
+const hideAudBookingInfo = () => { showPopupAudBookingInfo.value = false; };
+
 </script>
 
 <template>
@@ -215,30 +246,35 @@ async function loadBookHistory(){
     <Header />
 
   </div>
-    <h2>Актуальные бронирования:</h2>
-    <table class="booking-table">
-      <thead>
-        <tr>
-          <th>Дата</th>
-          <th>Время</th>
-          <th>Комната</th>
-          <th>Номер пары</th>
-          <th>Действие</th>
-        </tr>
-      </thead>
-      <tbody>
 
-        <tr v-for="actual_item in actual_book_items" :id="`tr_${actual_item.audience.number}`">
-          <td :id="`date_${actual_item.audience.number}`">{{actual_item.date}}</td>
-          <td :id="`time_${actual_item.audience.number}`">{{actual_item.booking_time.slice(0, 8)}}</td>
-          <td :id="`number_${actual_item.audience.number}`">{{actual_item.audience.number}}</td>
-          <td :id="`pair_${actual_item.audience.number}`">{{actual_item.pair_number}}</td>
-          <td :id="`button_${actual_item.audience.number}`"><button class="cancel-button" @click="cancelBooking(actual_item.audience.number);showNotification_id(actual_item.audience.number);">Завершить</button></td>
-        </tr>
-      </tbody>
-     </table>
+
+ 
+    <div style="overflow-x: clip;" v-for="actual_item in actual_book_items" :id="`tr_${actual_item.audience.number}`" class="container">
+        <div class="auditorium">
+            <div class="details">
+		<span><h3>Аудитория {{actual_item.audience.number}} ГК</h3></span>
+            	<span><img @click="showAudBookingInfo()" class="icon-pic image_for_click" src="@/assets/info.svg"></span>
+	    </div>
+
+	    <div class="details"><span>Дата: <strong>{{actual_item.date}}</strong></span></div>
+	    <div class="details"><span>Время бронирования: <strong>{{actual_item.booking_time.slice(0, 8)}}</strong></span></div>
+            <div class="details"><span>Аудитория: <strong>{{actual_item.audience.number}} ГК</strong></span></div>
+	    <div class="details"><span>Пар для бронирования: <strong>{{actual_item.pair_number}} шт.</strong></span></div>
+	    <div class="details">
+		    <span>Начало: <strong>{{ start_time }}</strong></span>
+		    <span>Конец: <strong>{{ end_time }}</strong></span>
+            </div>
+            <div style="flex-wrap: wrap; display: flex; gap: 1vw;">
+				<button @click="action_Booking(actual_item.audience.number, 'cancel_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 20vw; background-color: #DC3545;">Отменить</button>
+				<button @click="action_Booking(actual_item.audience.number, 'finalize_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 20vw; background-color: #FFAB42;">Завершить</button>
+				<button @click="action_Booking(actual_item.audience.number, 'not_my_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 50vw; background-color: #203979;">Аудитория занята не мной</button>
+            <button @click="action_Booking(actual_item.audience.number, 'this_is_my_booking');showNotification_id(actual_item.audience.number);" class="button" style="width: 92vw;">Ура, я в аудитории</button>
+        	</div>
+        </div>
+    </div>
 
     <h2>История бронирования</h2>
+    <div style="padding-bottom: 70px;">
     <table class="booking-table" style="padding-bottom: 70px;">
       <thead>
         <tr>
@@ -257,6 +293,7 @@ async function loadBookHistory(){
         </tr>
       </tbody>
     </table>
+    </div>
 
   <div class="notification-container">
       <div v-for="actual_item in actual_book_items">
@@ -266,9 +303,57 @@ async function loadBookHistory(){
         </div>
       </div>
   </div>
+
+
+	<transition name="fade-rate-info">
+  	<div v-if="showPopupAudBookingInfo" class="popup button-width button-width">
+        	<div class="popup-content">
+                	<p>
+                                <a href="https://mipt.site/info">ПОДРОБНЕЕ ТУТ</a>
+                        </p>
+
+			<div v-for="actual_item in actual_book_items">
+                            <p>
+				Вы забронировали аудиторию {{actual_item.audience.number}} ГК. Бронирование не означает гарантированное нахождение в аудиории
+				одному. Сервис позволяет экономить время за счёт автоматической подгрузки занятых аудиторий. Некоторые пары, указанные в 
+				брониронии учебного управления не отображаются в системе из-за постоянно меняющегося расписания.
+                            </p>
+                            <p>
+                                Предпотения пользоватея позволяют бронировать аудитории совместно для уплотнения студентов и более эффективной и
+				качественной работы в коллективе.
+                            </p>
+			    <p>
+                                В случае, если аудитория занята нажмите: "АУДИТОРИЯ ЗАНЯТА НЕ МНОЙ" - и сервис предоставит одну из резервных аудиторий.
+                            </p>
+			    <p>
+                                Уведомляем о том, что бронирование на определенное время может быть недоступно из-за высокой стоимости пары
+				в Баллах Бронирования. Данная система позволяет бронировать аудитории вне зависимости от того, кто 
+				первым занял аудиторию.
+                            </p>
+			</div>
+
+                        <button @click="hideAudBookingInfo" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+               </div>
+        </div>
+	</transition>
+
+
+
 </template>
 
 <style scoped>
+
+@media (max-width: 768px) {
+        .button-width {
+                min-width: 80vw;
+        }
+}
+
+@media (min-width: 768px) {
+        .button-width {
+                max-width: 30vw;
+        }
+}
 
 .table {
   display: flex;
@@ -374,5 +459,115 @@ async function loadBookHistory(){
     .item_hidden{
         visibility: hidden;
     }
+
+        body {
+            font-family: sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 0px;
+        }
+
+        .auditorium {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            margin-bottom: 20px;
+            width: 92vw;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .auditorium h3 {
+            margin-top: 0;
+        }
+
+        .auditorium .details {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .auditorium .details span {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .auditorium .details strong {
+            font-weight: bold;
+        }
+
+        .auditorium .button {
+            display: block;
+            background-color: #4CAF50;
+            color: white;
+            padding-top: 10px;
+	    padding-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .auditorium .button:hover {
+            background-color: #45a049;
+        }
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.popup-content {
+  max-height: 70vh; /*Adjust as needed */
+  overflow-y: auto;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-active-rate-info,
+.fade-leave-active-rate-info {
+  transition: opacity 0.3s;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-rate-info,
+.fade-leave-to-rate-info {
+  opacity: 0;
+}
+
+
+.icon-pic {
+  width: 18px;
+  float: right;
+  border: 3px solid #ccc;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.image_for_click{
+  cursor: pointer;
+}
+
 
 </style>

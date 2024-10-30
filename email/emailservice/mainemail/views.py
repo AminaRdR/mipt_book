@@ -6,12 +6,12 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka import Producer
 
 from mainemail.services import \
-    sendEmail, \
+    send_booking_email, \
     log, \
-    make_pdf
+    make_pdf, send_text_email
 from mainemail.tasks import \
     send_verification_email, \
-    send_task_email
+    send_task_email, send_task_text_email
 from rest_framework.decorators import api_view
 import json
 from rest_framework import status
@@ -58,21 +58,21 @@ def send_email(request):
     if request.method == 'POST':
         data_request = request.POST  # json.loads(list(request.POST.dict())[0])
         try:
-            if data_request.get('type') == "send_email":
+            if data_request.get('type') == "send_text_email":
                 email_address = data_request.get('email_address')
                 email_text = data_request.get('email_text')
                 email_title = data_request.get('email_title')
                 log(f"Отправка сообщения через форму. A:{email_address}, Text:{email_text}, Title:{email_title}", "i")
-                send_task_email.delay(email_address, email_text, email_title)
+                send_task_text_email.delay(email_address, email_text, email_title)
                 return JsonResponse({'result': 'Email sent successfully'})
         except ConnectionError as e:
             log(f"ConnectionError. Error:{e}", "e")
             return Response(
-                {"Error": "ConnectionError", "value": str(e)},
+                {"Error": "ConnectionError", "value": str(e)}, 
                 status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             log(f"Error:{e}", "e")
-            return Response({"Error": "Error", "value": str(e)},
+            return Response({"Error": "Error", "value": str(e)}, 
                             status=status.HTTP_503_SERVICE_UNAVAILABLE)
     if request.method == 'GET':
         return render(request, 'email_test/index_send.html')
@@ -100,6 +100,16 @@ def send_email_booking(request):
                     pair_number=data_request.get('pair_number', ''),
                     bb_number=data_request.get('bb_number', ''),
                     preferences_list=data_request.get('preferences_list', ''))
+                return JsonResponse({'result': 'Email sent successfully'})
+            elif data_request.get('type') == "send_text_email":
+                email_address = data_request.get('email_address')
+                email_text = data_request.get('email_text')
+                email_title = data_request.get('email_title')
+                log(f"Отправка сообщения через форму. A:{email_address}, Text:{email_text}, Title:{email_title}", "i")
+                send_task_text_email.delay(
+                    email_address,
+                    email_text,
+                    email_title)
                 return JsonResponse({'result': 'Email sent successfully'})
         except ConnectionError as e:
             log(f"ConnectionError. Error:{e}", "e")

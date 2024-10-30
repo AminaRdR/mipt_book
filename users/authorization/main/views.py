@@ -150,7 +150,7 @@ def edit_user_name(request):
                         return Response(serializer.data, status=status.HTTP_406_NOT_ACCEPTABLE)
                 elif data_request.get('type') == "edit_user_group":
                     log(f"Начало редактирования группы пользователя", "i")
-                    group_name  = data_request.get("group", "Б02-001")
+                    group_name  = data_request.get("group", "Б00-000")
                     group = InstituteGroup.objects.filter(name=group_name)
                     if len(group) == 1:
                         user.institute_group = group[0]
@@ -220,11 +220,12 @@ def oauth_yandex(request):
 
         if response.status_code == 200:
             oauth_email = response.json().get('default_email', '')
+            oauth_username = get_usrname_by_email(oauth_email)
             log(f"oauth_email={oauth_email} response={response.json()}", "i")
 
-            if len(User.objects.filter(username=oauth_email)) == 0: 
+            if len(User.objects.filter(username=oauth_username)) == 0: 
                 log(f"Регистрация пользоватея: {oauth_email}", "i")
-                new_user = User.objects.create_user(get_usrname_by_email(oauth_email))
+                new_user = User.objects.create_user(oauth_username)
                 new_user.email = oauth_email
                 new_user.first_name = response.json().get("first_name").split(" ")[0]
             
@@ -233,7 +234,7 @@ def oauth_yandex(request):
             
                 new_user.last_name = response.json().get("last_name")
                 new_user.token = data_request.get("access_token")
-                new_user.institute_group = InstituteGroup.objects.get(name="Б02-003")
+                new_user.institute_group = InstituteGroup.objects.get(name="Б00-000")
                 new_user.user_role = Role.objects.get(name="Пользователь")
                 new_user.save()
 
@@ -248,8 +249,8 @@ def oauth_yandex(request):
                     "Result": response.json(),
                     "token_for_user": new_token.key, 
                     "access_token": data_request.get("access_token", "")}, status=status.HTTP_202_ACCEPTED)
-            elif len(User.objects.filter(username=response.json().get("default_email"))) == 1:
-                my_user = User.objects.get(username=response.json().get("default_email"))
+            elif len(User.objects.filter(username=oauth_username)) == 1:
+                my_user = User.objects.get(username=oauth_username)
 
                 my_token, created = Token.objects.get_or_create(user=my_user)
 
@@ -257,24 +258,24 @@ def oauth_yandex(request):
                     "Result": response.json(),
                     "token_for_user": my_token.key,
                     "access_token": data_request.get("access_token", "")}, status=status.HTTP_202_ACCEPTED)
-
+        else:
+            log(f"Status code: {response.status_code}", "e")
+            log(f"Response: {response}", "i")
         token  = data_request.get("token", "")
         try:
             user = Token.objects.get(key=token).user
             if user is not None:
                 log("Возвращаем подтверждение существования пользователя при корректности токена", "i")
-                return Response({"Result": "True"}, status=status.HTTP_202_ACCEPTED)
+                return Response({"Result": "True", "Token": token}, status=status.HTTP_202_ACCEPTED)
             else:
                 log("Создание пользователя по полученному токену из Яндекс Авторизации", "i")
-                return Response({"Result": "True"}, status=status.HTTP_202_ACCEPTED)
+                return Response({"Result": "True","Token": token}, status=status.HTTP_202_ACCEPTED)
         except ConnectionError as e:
             log(f"ConnectionError. Error:{e}", "e")
-            return Response(
-                {"Error": "ConnectionError", "value": str(e)},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response({"Error": "ConnectionError", "value": str(e), "Token__": token}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             log(f"Error:{e}", "e")
-            return Response({"Error": "Error", "value": str(e)},
+            return Response({"Error": "Error", "value": str(e),"Token_": token},
                             status=status.HTTP_503_SERVICE_UNAVAILABLE)
     if request.method == 'GET':
         return render(request, 'oauth/index.html')

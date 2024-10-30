@@ -5,7 +5,7 @@ import logging
 import datetime
 
 
-async def create_user_wallet_make(token, username):
+async def create_user_wallet_make(token, user):
     web_address = "https://mipt.site"
 
     retries = Retry(
@@ -21,29 +21,30 @@ async def create_user_wallet_make(token, username):
         web_address + ":8000/wallet/",
         data={
             "type":"create_user_wallet",
-            "token":token, #"be81040e506a30f10288149d8ffaf21905ac73e0",
-            "username":username #"user18"
+            "token":token,
+            "username":user.username,
+            "email":user.email
         },
         verify=False,
         headers={"Accept": "application/json"})
     response.encoding = 'utf-8'
 
-    log(f"Кошелёк создан. U:{username}, T:{token}", "i")
+    log(f"Кошелёк создан. U:{user.username}, T:{token}", "i")
 
     print(response.status_code, response.reason)
 
     return response
 
 
-async def create_user_wallet_prev(token, username):
-    response = asyncio.create_task(create_user_wallet_make(token, username))
+async def create_user_wallet_prev(token, user):
+    response = asyncio.create_task(create_user_wallet_make(token, user))
 
     res = await asyncio.gather(response)
     return res
 
 
-def create_user_wallet(token, username):
-    check_token_result = asyncio.run(create_user_wallet_prev(token, username))
+def create_user_wallet(token, user):
+    check_token_result = asyncio.run(create_user_wallet_prev(token, user))
     return check_token_result
 
 

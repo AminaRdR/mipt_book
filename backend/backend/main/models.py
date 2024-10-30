@@ -292,7 +292,7 @@ class AudienceAdmin(admin.ModelAdmin):
 @admin.register(UsersWallet)
 class UsersWalletAdmin(admin.ModelAdmin):
     search_fields = ("id", "username", "number_bb")
-    list_display = ("id", "username", "number_bb", )
+    list_display = ("id", "username", "number_bb", "email", )
 
 
 @admin.register(Book)

@@ -150,19 +150,21 @@ async def send_email_make(email_address, email_text, email_title):
     session = requests.Session()
     session.mount('https://', adapter)
 
-    response = session.post(
-        web_address + ":8083/send_email/",
-        data={
-            "type":"send_email",
+    data = {
+            "type":"send_text_email",
             "email_address":email_address,
             "email_text":email_text,
             "email_title": email_title
-        },
+        }
+
+    response = session.post(
+        web_address + ":8083/send_email/",
+        data=data,
         verify=False,
         headers={"Accept": "application/json"})
     response.encoding = 'utf-8'
 
-    log(f"Email отправлен. A:{email_address}, T:{email_title}", "i")
+    log(f"Email отправлен. A:{email_address}, T:{email_title} data={data}", "i")
 
     return response
 
@@ -206,15 +208,23 @@ def get_username_by_username(username):
         return None
 
 
-def create_user_wallet(username, token=""):
+def get_bb_amount_by_email(email=""):
+    log(f"============={email}", "i")
+    if "phystech.edu" in email:
+        return 28
+    return 0
+
+
+def create_user_wallet(username, token="", email=""):
     log(f"Начало создания кошелька пользователя. U:{username}, T{token}", "d")
     if len(UsersWallet.objects.filter(username=username)) != 0:
         log(f"При создании кошелька пользователь не был найден. U:{username}", "e")
         return False
     users_wallet = UsersWallet(
         username=username,
+        email=email,
         token=token,
-        number_bb=28
+        number_bb=get_bb_amount_by_email(email)
     )
     users_wallet.save()
     log(f"Кошелёк пользователя успешно создан. U:{username}", "d")
@@ -281,6 +291,7 @@ def get_book_audience_response(
         booking_time=datetime.datetime.now().time(),
         visibility=1)
     new_book.save()
+    log(f"++++++{number}", "i")
     audience = Audience.objects.get(number=number)
     if audience.day_history.pair[pair_number][1] == "Свободно":
         # Останавливаем мгновенные бронирования
@@ -479,6 +490,9 @@ def check_queue_list(time_slot: int):
     number_of_audiences = len(Audience.objects.exclude(audience_status__name='Отсутствует для бронирования'))
     queue_list = make_queue_list(time_slot)
     queue = sorted(queue_list, key=lambda item: int(item["number_bb"]), reverse=True)
+
+    for queue_item in queue:
+        queue_item["user_wallet"].number_bb = max(int(queue_item["user_wallet"].number_bb) - int(queue_item["number_bb"]), 0)
 
     email_list = make_email_list(queue, number_of_audiences)
     audience_list = make_audience_list(queue, number_of_audiences)

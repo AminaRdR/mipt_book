@@ -17,6 +17,11 @@ interface Preference {
   name: string,
   description: string
 }
+interface InstituteGroup {
+  name: string,
+  description: string
+}
+
 
 // DO THIS
 // const web_site = "mipt.site";
@@ -30,6 +35,8 @@ let number_bb = ref<string|null>(null);
 let form_first_name = ref<string|null>(null);
 let form_last_name = ref<string|null>(null);
 let form_third_name = ref<string|null>(null);
+let selected_institute_group = ref<string|null>(null);
+let search_institute_group = ref<string|null>(null);
 
 let token = ref<string|null>(null);
 
@@ -39,6 +46,7 @@ const user_name: Reactive<UserName> = reactive({
 let institute_group: Ref<string|null> = ref(null);
 let book_rating: Ref<number> = ref(1);
 let preferences: Ref<Preference[]> = ref([]);
+let institute_groups: Ref<InstituteGroup[]> = ref([]);
 
 
 type KeyValuePair = [string, string];
@@ -95,6 +103,7 @@ onMounted(()=>{
   	console.log("===== 4");
   	loadBBNumber();
   }
+  loadInstituteGroup();
 });
 
 import { useRouter } from 'vue-router';
@@ -199,6 +208,29 @@ async function loadBBNumber(){
   }
 }
 
+async function loadInstituteGroup(){
+  try {
+    const response = await fetch("https://" + web_site + ":8088" + "/base-info/institute_group/",{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Сеть ответила с ошибкой: ' + response.status);
+    }
+
+    const data = await response.json() as InstituteGroup[];
+    console.log('Ответ от сервера:', data);
+
+    institute_groups.value = data;
+
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+  }
+}
+
 async function loadPreferences(){
   try {
     const response = await fetch("https://" + web_site + ":8088" + "/base-info/preferences/",{
@@ -225,10 +257,6 @@ async function loadPreferences(){
 
 async function sendEditNameForm(){
   try {
-    // form_first_name.value = document.getElementById("first_name_input")?.value;
-    // form_last_name.value = document.getElementById("last_name_input")?.value;
-    // form_third_name.value = document.getElementById("third_name_input")?.value;
-
     const response = await fetch("https://" + web_site + ":8088/edit_user_name/",{
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -262,9 +290,40 @@ async function sendEditNameForm(){
   }
 }
 
+async function sendEditGroupForm(){
+  try {
+    const response = await fetch("https://" + web_site + ":8088/edit_user_name/",{
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: JSON.stringify({
+        "type": "edit_user_group",
+        "token": token.value,
+        "group": selected_institute_group.value
+      })
+    });
+    institute_group.value = selected_institute_group.value ?? "Имя";
+
+    if (!response.ok) {
+      console.error('Сеть ответила с ошибкой: ' + response.status);
+    }
+    if (response.ok) {
+        const data = await response.json();
+        console.log('Ответ от сервера:', data);
+        hidePopupEditGroup();
+        // showNotification("name_notification");
+        // setTimeout(hideNotification, 2000, "name_notification");
+    } else {
+        console.error('Ошибка запроса:', response.status);
+    }
+
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+  }
+}
 
 const showPopupRateInfo = ref(false);
 const showPopup = ref(false);
+const showEditGroup = ref(false);
 
 const popupContentRateInfo = ref([
   '- Перед использоваем аудитории пользователь должен зарегистироваться в системе и забронировать аудитрию за выделенное ему число баллов бронирования, которые он может потратить на бронирвание аудитории в любое время (изначальный эквивалент одной пары - 1 балл бронирования)',
@@ -296,6 +355,11 @@ const showPopup_func = () => {
 const hidePopup = () => {
   showPopup.value = false;
 };
+
+
+const showPopupEditGroup = () => { showEditGroup.value = true; };
+const hidePopupEditGroup = () => { showEditGroup.value = false; };
+
 
 
     function showNotification(notificationId: string) {
@@ -384,126 +448,162 @@ async function logAuth(){
   return "";
 }
 
+function selectOption(option: string) {
+      selected_institute_group.value = option;
+      search_institute_group.value = option;
+}
+
 </script>
 
 <template>
-  <div class="centered-div">
-    <div v-if="token == null">
-      <h3>Для доступа в личный кабинет нужно авторизоваться</h3>
-    </div>
 
-
-
-    <template v-else>
-      <Header />
-      <!-- <div><p>Введенный текст: {{ form_first_name }} | {{ form_last_name }} | {{ form_third_name }} </p></div>-->
-      <div class="class1" style="font-size: 24px;">
-        <div class="left-element" style="height: 100%">
-          <div style="width: 100%;">
-            <span>{{user_name.first_name}}</span><br class="half-line-break">
-            <div class="full_name_div"></div>
-	    <span>{{user_name.third_name}}</span><br class="half-line-break">
-            <div class="full_name_div"></div>
-	    <span>{{user_name.last_name}}</span>
-                <img class="icon-pic image_for_click" @click="showPopup_func" src="@/assets/edit.svg" alt="Edit">
-            <br>
-          </div>
-          <div style="position:absolute; bottom: 0; width: 100%">
-            <br>
-            <span>{{institute_group}}</span>
-            <img class="icon-pic image_for_click" src="@/assets/edit.svg" alt="Edit">
-          </div>
+<div style="padding-bottom: 70px;">
+    <div class="centered-div">
+        <div v-if="token == null">
+            <h3>Для доступа в личный кабинет нужно авторизоваться</h3>
         </div>
-        <div class="right-element">
-          <img src="@/assets/sania.png" class="profile-pic" alt="Ваша фотография">
-        </div>
-      </div>
 
-
-      <div>
-        <div>
-            <p style="font-size: 24px;">Рейтинг бронирования: <img class="icon-pic image_for_click" @click="showPopupRateInfo_fun" src="@/assets/info.svg"></p>
-            <transition name="fade-rate-info">
-                <div v-if="showPopupRateInfo" class="popup">
-                    <div class="popup-content">
-                        <button @click="hidePopupRateInfo" style="background-color: #dc3545;color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
-                        <p v-for="(line, index) in popupContentRateInfo" :key="index">{{ line }}</p>
-                        <button @click="hidePopupRateInfo" style="background-color: #dc3545;color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+        <template v-else>
+            <Header />
+                <!-- <div><p>Введенный текст: {{ form_first_name }} | {{ form_last_name }} | {{ form_third_name }} </p></div>-->
+      
+		<div class="class1" style="font-size: 24px;">
+                    <div class="left-element" style="height: 100%">
+                        <div style="width: 100%;">
+				<span>{{user_name.first_name}}</span>
+				<br class="half-line-break">
+            		        <div class="full_name_div"></div>
+	                        
+				<span>{{user_name.third_name}}</span>
+				<br class="half-line-break">
+                                <div class="full_name_div"></div>
+	                        
+				<span>{{user_name.last_name}}</span>
+                                <img class="icon-pic image_for_click" @click="showPopup_func" src="@/assets/edit.svg" alt="Edit">
+                                <br>
+                        </div>
+          
+		        <div style="position:absolute; bottom: 0; width: 100%">
+                            <br>
+                            <span>{{institute_group}}</span>
+                            <img class="icon-pic image_for_click" src="@/assets/edit.svg" alt="Edit" @click="showPopupEditGroup">
+                        </div>
+                    </div>
+        
+		    <div class="right-element">
+                        <img src="@/assets/sania.png" class="profile-pic" alt="Ваша фотография">
                     </div>
                 </div>
-            </transition>
-        </div>
 
-        <div style="display: flex; justify-content: space-around">
-            <template v-for="index in 7">
-                <div class="star" :class="{checked : index <= book_rating}"></div>
+
+                <div>
+                    <div>
+                        <p style="font-size: 24px;">Рейтинг бронирования: <img class="icon-pic image_for_click" @click="showPopupRateInfo_fun" src="@/assets/info.svg"></p>
+                        <transition name="fade-rate-info">
+                            <div v-if="showPopupRateInfo" class="popup">
+                                <div class="popup-content">
+                                    <button @click="hidePopupRateInfo" style="background-color: #dc3545;color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+                                    <p v-for="(line, index) in popupContentRateInfo" :key="index">{{ line }}</p>
+                                    <button @click="hidePopupRateInfo" style="background-color: #dc3545;color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-around">
+                        <template v-for="index in 7">
+                            <div class="star" :class="{checked : index <= book_rating}"></div>
+                        </template>
+                    </div>
+                </div>
+
+                <div>
+                    <p style="font-size: 24px;">Баллы бронирования</p>
+                    <span style="font-size: 18px;"> {{number_bb}} из 28 баллов</span><br>
+                    <span style="color: grey; font-size: 12px;"> следующие +4 балла через 15 часов</span>
+                </div>
+                
+		<div>
+                    <div>
+                        <p style="font-size: 24px;">Предпочтения:  <img class="icon-pic image_for_click" @click="showPopup_func" src="@/assets/edit.svg" alt="Edit"></p>
+			<transition name="fade">
+                            <div v-if="showPopup" class="popup">
+                                <div class="popup-content">
+                                    <h2>Редактирование ФИО</h2>
+
+                                    <form @submit.prevent="sendEditNameForm">
+                                        <input type="text" name="token" value="618b000cfdf0d5bd9402aff1b7e64ce9ec5e9d1a" hidden>
+                                        <input type="text" name="type" value="edit_user_name" hidden>
+                                        
+					<div class="div-pop-up-edit-fio">
+                                            <p style="font-size: 16px;padding: 10px;"><label for="first_name_input">Имя:</label></p>
+                                            <p><input type="text" id="first_name_input" name="first_name" placeholder="Введите имя" v-model="form_first_name" /></p>
+                                        </div>
+
+                                        <div class="div-pop-up-edit-fio">
+                                            <p style="font-size: 16px;padding: 10px;"><label for="last_name_input">Фамилия:</label></p>
+                                            <p><input type="text" id="last_name_input" name="last_name" placeholder="Введите фамилию" v-model="form_last_name" /></p>
+                                        </div>
+
+                                        <div class="div-pop-up-edit-fio">
+                                            <p style="font-size: 16px;padding: 10px;"><label for="third_name_input">Отчество:</label></p>
+                                            <p><input type="text" id="third_name_input" name="third_name" placeholder="Введите отчество" v-model="form_third_name" /></p>
+                                        </div>
+
+                                        <div class="div-pop-up-edit-fio">
+                                            <button @click="hidePopup" type="reset" style="background-color: #dc3545;color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+                                            <button type="submit" style="background-color: #4caf50; color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Сохранить</button>
+                                        </div>
+                                    </form>
+	                        </div>
+                            </div>
+                        </transition>
+                    </div>
+
+                    <template v-for="preference in preferences">
+                        <div style="font-size: 18px;">
+                            {{preference.name}}
+	                    <img class="icon-pic" :src="preferencesIcons[preference.name]" alt="">
+                        </div>
+                    </template>
+	  
+		    <transition name="fade">
+                            <div v-if="showEditGroup" class="popup">
+                                <div class="popup-content">
+					<h2>Выбор институтской группы</h2>
+					<form @submit.prevent="sendEditGroupForm">
+		    			    <div>	
+						<input type="text" list="brow" placeholder="Введите название групп..." v-model="selected_institute_group"/>
+						<datalist id="brow">
+							<option v-for="option in institute_groups" :value="option.name">{{ option.name }}</option>
+						</datalist>
+		    			    </div>
+					    <div class="div-pop-up-edit-fio">
+					    	<button @click="hidePopupEditGroup" type="reset" style="background-color: #dc3545;color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+		    		            	<button type="submit" style="background-color: #4caf50; color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Установить группу</button>
+				           </div>
+					</form>
+				</div>
+                            </div>
+                    </transition>
+
+                </div>
+      
+	        <div style="padding-top: 10px;">
+		    <button class="logout-button" @click="logout">Выйти</button>
+		</div>
             </template>
         </div>
-      </div>
 
-      <div>
-        <p style="font-size: 24px;">Баллы бронирования</p>
-        <span style="font-size: 18px;"> {{number_bb}} из 28 баллов</span><br>
-        <span style="color: grey; font-size: 12px;"> следующие +4 балла через 15 часов</span>
-      </div>
-
-
-      <div>
-  <div>
-    <p style="font-size: 24px;">Предпочтения:  <img class="icon-pic image_for_click" @click="showPopup_func" src="@/assets/edit.svg" alt="Edit"></p>
-    <transition name="fade">
-      <div v-if="showPopup" class="popup">
-        <div class="popup-content">
-            <h2>Редактирование ФИО</h2>
-
-  <form @submit.prevent="sendEditNameForm">
-    <input type="text" name="token" value="618b000cfdf0d5bd9402aff1b7e64ce9ec5e9d1a" hidden>
-    <input type="text" name="type" value="edit_user_name" hidden>
-    <div class="div-pop-up-edit-fio">
-        <p style="font-size: 16px;padding: 10px;"><label for="first_name_input">Имя:</label></p>
-        <p><input type="text" id="first_name_input" name="first_name" placeholder="Введите имя" v-model="form_first_name" /></p>
-    </div>
-
-    <div class="div-pop-up-edit-fio">
-        <p style="font-size: 16px;padding: 10px;"><label for="last_name_input">Фамилия:</label></p>
-        <p><input type="text" id="last_name_input" name="last_name" placeholder="Введите фамилию" v-model="form_last_name" /></p>
-    </div>
-
-    <div class="div-pop-up-edit-fio">
-        <p style="font-size: 16px;padding: 10px;"><label for="third_name_input">Отчество:</label></p>
-        <p><input type="text" id="third_name_input" name="third_name" placeholder="Введите отчество" v-model="form_third_name" /></p>
-    </div>
-
-    <div class="div-pop-up-edit-fio">
-        <button @click="hidePopup" type="reset" style="background-color: #dc3545;color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
-        <button type="submit" style="background-color: #4caf50; color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Сохранить</button>
-    </div>
-  </form>
-        </div>
-      </div>
-    </transition>
-  </div>
-
-
-          <template v-for="preference in preferences">
-            <div style="font-size: 18px;">
-              {{preference.name}}
-	      <img class="icon-pic" :src="preferencesIcons[preference.name]" alt="">
+    	<div class="notification-container">
+             <div class="notification" id="name_notification">
+                <p>Вы успешно изменили ФИО</p>
+                <span class="notification-close" @click="hideNotification('name_notification')">×</span>
             </div>
-          </template>
-      </div>
-      <div style="padding-top: 10px;"><button class="logout-button" @click="logout">Выйти</button></div>
-    </template>
-  </div>
-
-    <div class="notification-container">
-        <div class="notification" id="name_notification">
-            <p>Вы успешно изменили ФИО</p>
-            <span class="notification-close" @click="hideNotification('name_notification')">×</span>
         </div>
     </div>
-
 </template>
+
 
 <style scoped>
 

@@ -1,6 +1,6 @@
 from emailservice.celery import app
 from celery.schedules import crontab
-from mainemail.services import sendEmail
+from mainemail.services import send_booking_email, send_text_email
 from mainemail.services import log
 
 
@@ -25,7 +25,7 @@ def send_task_email(
         bb_number=5,
         preferences_list="свежий воздух, тихая музыка"):
     try:
-        sendEmail(
+        send_booking_email(
             email_title,
             email_text,
             email_address,
@@ -36,6 +36,17 @@ def send_task_email(
             pair_number,
             bb_number,
             preferences_list)
+    except Exception as e:
+        log(e, "e")
+
+
+@app.task
+def send_task_text_email(
+        email_address: str,
+        email_text: str,
+        email_title: str):
+    try:
+        send_text_email(email_title, email_text, email_address)
     except Exception as e:
         log(e, "e")
 

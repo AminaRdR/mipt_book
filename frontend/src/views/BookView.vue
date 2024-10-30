@@ -16,6 +16,26 @@ let form_time_slot = ref<String>("");
 
 const router = useRouter();
 
+interface User {
+    username: string;
+}
+
+interface AudienceItem {
+    number: string;
+    description: string;
+    audience_status: string;
+}
+
+interface ActualBookItem {
+  audience: AudienceItem,
+  user: User,
+  number_bb: number,
+  pair_number: number,
+  date: string,
+  booking_time: string,
+  time_slot: string
+}
+
 function selectAudience(audience: IAudience) {
   form_audience_name.value = audience.number;
 }
@@ -35,11 +55,16 @@ let username = ref<string|null>(null);
 // const web_site = "127.0.0.1";
 const web_site = inject('web_site');
 
+const showPopupAuthBBInfo = ref(false);
 const showPopupBookingInfo = ref(false);
+const showPopupAudNumberInfo = ref(false);
+const showPopupTimeSlotInfo = ref(false);
 
 onMounted(()=>{
   token.value = localStorage.getItem("auth-token");
   username.value = localStorage.getItem("username");
+
+  checkBookHistory();
 
   if (localStorage.getItem("auth-token") == null) {
       setTimeout(()=>{
@@ -51,6 +76,11 @@ onMounted(()=>{
           });
       }, 6500);
   }
+  window.scrollTo({
+    top: 1000,
+    behavior: 'smooth'
+  });
+  // document.getElementById('your-element').scrollIntoView({ behavior: 'smooth' });
 });
 
 const showPopupBookingInfo_fun = () => {
@@ -93,6 +123,38 @@ async function sendForm(){
   }
 }
 
+
+async function checkBookHistory(){
+  try {
+    const response = await fetch("https://" + web_site + ":8000/base-info/book/?user=" + username.value,{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Сеть ответила с ошибкой: ' + response.status);
+
+      if(response.status == 401){
+        console.log(9);
+      }
+    }
+
+    const data_number = await response.json() as ActualBookItem[];
+        
+    if (data_number.length > 0) {
+	router.push("/book-history/");
+    }
+
+    console.log('Ответ от сервера header actual_book_items:', data_number);
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+  }
+}
+
+
+
   function showNotificationBooked() {
       if (document.getElementById("book_notification")) {
         document.getElementById("book_notification")?.classList.add("show");
@@ -101,6 +163,11 @@ async function sendForm(){
         console.error('Элемент с id "' + "book_notification" + '" не найден');
       }
       setTimeout(hideNotification, 2000, "book_notification");
+      setTimeout(()=>{
+          router.push("/book-history/").then(()=>{
+            router.go(0); // force reload
+          });
+      }, 2000);
     }
 
   function showNotification_id(audience_number: string) {
@@ -141,13 +208,25 @@ async function sendForm(){
       }
     }
 
+const showAuthBBInfo = () => { 
+	showPopupAuthBBInfo.value = true; 
+};
+const hideAuthBBInfo = () => { showPopupAuthBBInfo.value = false; };
+
+const showAudNumberInfo = () => { showPopupAudNumberInfo.value = true; };
+const hideAudNumberInfo = () => { showPopupAudNumberInfo.value = false; };
+
+const showTimeSlotInfo = () => { showPopupTimeSlotInfo.value = true; };
+const hideTimeSlotInfo = () => { showPopupTimeSlotInfo.value = false; };
 
 </script>
 
 <template>
+  <div style="padding-bottom: 70px;">
   <div class="centered-div">
     <Header />
-
+	    <!-- <p style="color: red;">Сервис запущен в тестовом режиме, учитывает раписание занятий и стремиться к отображению максимально точной картины занятости. Однако часть студентов пока не осведомлена об этом удобном способе бронирования. Если выбранная аудитория занята, вам автоматически будет предложена другая подходящая аудитория.</p> -->
+	    <p style="color: red;">Сервис запущен в тестовом режиме и в его работе возможны ошибки. Писать на почту: info@mipt.site</p>
     <form @submit.prevent="sendForm">
 
       <BookAudience @select-audience="selectAudience"/>
@@ -156,17 +235,18 @@ async function sendForm(){
 
       <div class="container-head" style="height: 60px;">
         <div class="left-element">
-          <h3>Автоматические ББ</h3>
+		<h3>Автоматические ББ      <!--<img class="icon-pic image_for_click" src="@/assets/info.svg">--></h3>
         </div>
         <div class="right-element">
           <label class="toggle-switch">
-            <input type="checkbox">
+            <input type="checkbox" required checked>
             <span class="slider"></span>
           </label>
+	  <img @click="showAuthBBInfo()" class="icon-pic image_for_click" src="@/assets/info.svg">
         </div>
       </div>
 
-      <input type="submit" class="button1" value="Забронировать" @click="showNotificationBooked();"><br><br>
+      <input id="your-element" type="submit" class="button1" value="Забронировать" @click="showNotificationBooked();"><br><br>
     </form>
   </div>
 
@@ -188,10 +268,51 @@ async function sendForm(){
     </transition>
 
 
+            <transition name="fade-rate-info">
+                <div v-if="showPopupAuthBBInfo" class="popup button-width">
+                    <div class="popup-content">
+			    <!-- <button @click="hideAuthBBInfo" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button> -->
+                        
+			<p>
+				<a href="https://mipt.site/info">ПОДРОБНЕЕ ТУТ</a>
+			</p>
+			
+			<p>
+				Баллы Бронирования (ББ) начилсяются студентам МФТИ для бронирования аудиторий. Всего не более 28 ед. и +4ББ/сутки. 
+				При автоматиеском выставлении баллов
+				бронирования система определяет число необходимых баллов для бронирования аудитории с шансом 90%. После чего списывает
+				соответствующее число. Изначально 1ББ = 1паре, но со временем и загруженностью число может меняться.
+			</p>
+			<p>
+				Совместное бронирование аудиторий позволяет делить число баллов бронирования на число студентов в аудитории.
+			</p>
 
+			<button @click="hideAuthBBInfo" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+                    </div>
+                </div>
+        </transition>
+	
+
+
+
+
+
+  </div>
 </template>
 
 <style scoped>
+@media (max-width: 768px) {
+        .button-width {
+                min-width: 80vw;
+        }
+}
+
+@media (min-width: 768px) {
+        .button-width {
+                max-width: 30vw;
+        }
+}
+
 .container-head {
   position: relative; /* Позиционирование относительно контейнера */
   height: 100px; /* Высота контейнера (для демонстрации) */
@@ -289,5 +410,22 @@ async function sendForm(){
   opacity: 0;
 }
 
+
+.icon-pic {
+  width: 18px;
+  float: right;
+  border: 3px solid #ccc;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.image_for_click{
+  cursor: pointer;
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 </style>

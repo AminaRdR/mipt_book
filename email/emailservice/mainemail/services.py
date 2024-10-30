@@ -60,6 +60,10 @@ def make_pdf(
     pdf.cell(1, 10, f"по правилам аукциона второй цены на несколько позоций. Подробнее", 0, 1)
     pdf.cell(1, 10, f"с правилами бронирования аудиторий Вы можете озникомиться на сайте: ", 0, 1)
     pdf.cell(1, 10, f"https://mipt.site/info", 0, 1)
+    pdf.cell(1, 10, f"", 0, 1)
+    pdf.cell(1, 10, f"Сообщаем о том, что сервис запущен в тестовом режиме и часть студентов", 0, 1)
+    pdf.cell(1, 10, f"не соблюдают правила бронирования. В случае занятости аудитории нажмите", 0, 1)
+    pdf.cell(1, 10, f"кнопку АУДИТОРИЯ ЗАНЯТА НЕ МНОЙ на сайте рядом с вашей бронью.", 0, 1)
 
     file_name = f"proof/{datetime.date.today().isoformat()}/{start_time}/Подтверждение_{user_name}_{aud_name}_{end_time}_{pair_number}.pdf"
     log(f"filename='{file_name}'", "i")
@@ -72,7 +76,7 @@ def make_pdf(
     return file_name
 
 
-def sendEmail(title, text, address,
+def send_booking_email(title, text, address,
               user_name="Александр Сергеевич",
               aud_name="524 ГК",
               start_time="18:35",
@@ -81,13 +85,6 @@ def sendEmail(title, text, address,
               bb_number=5,
               preferences_list="свежий воздух, тихая музыка"):
     log(f"Send: {str(title)[:10]} {str(text)[:10]} EMAIL HOST: {EMAIL_HOST_USER} ADDRESS:{address}", "i")
-    # send_mail(
-    #     title,
-    #     text,
-    #     EMAIL_HOST_USER,
-    #     [address],
-    #     fail_silently=False,
-    # )
     message = EmailMultiAlternatives(
         title,
         text,
@@ -95,6 +92,17 @@ def sendEmail(title, text, address,
         [address]
     )
     message.attach_file(make_pdf(user_name, aud_name, start_time, end_time, pair_number, bb_number, preferences_list))
+    message.send()
+
+
+def send_text_email(title, text, address):
+    log(f"Send: {str(title)[:10]} {str(text)[:10]} EMAIL HOST: {EMAIL_HOST_USER} ADDRESS:{address}", "i")
+    message = send_mail(
+        title,
+        text,
+        EMAIL_HOST_USER,
+        [address]
+    )
     message.send()
 
 
