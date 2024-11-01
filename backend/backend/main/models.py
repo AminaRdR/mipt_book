@@ -110,9 +110,40 @@ class UsersWallet(models.Model):
     email = models.CharField(max_length=255, blank=True)
     token = models.CharField(max_length=255, blank=True)
     number_bb = models.FloatField()
+    trust_rate = models.FloatField(default=1)  # рейтинг доверия пользователю
 
     def __str__(self):
         return f'UsersWallet: {self.username}|{self.number_bb}'
+
+    def clear_trust_rate(self):
+        self.trust_rate = 1
+
+
+
+class MarkedBusy(models.Model):
+    """ Класс для уведомления пользователем о том, что аудитория занята """
+    # Тот, кто уведомил систему
+    user = models.ForeignKey(
+        "UsersWallet",
+        on_delete=models.CASCADE,
+        related_name="marked_busy_users_wallet",
+        blank=True,
+        null=True)
+    # Номер аудитории о которой было упоминание
+    audience = models.ForeignKey(
+        "Audience",
+        on_delete=models.CASCADE,
+        related_name="marked_busy_audience",
+        blank=True,
+        null=True)
+
+    # Время упоминания
+    mark_time = models.TimeField(auto_now_add=True)
+    # Рейтинг доверия пользователя который проставил уведомление
+    trust_rate = models.FloatField(default=1)
+
+    def __str__(self):
+        return f'MarkedBusy: {self.user.username}|{self.mark_time}|{self.trust_rate}'
 
 
 class Book(models.Model):
@@ -293,6 +324,12 @@ class AudienceAdmin(admin.ModelAdmin):
 class UsersWalletAdmin(admin.ModelAdmin):
     search_fields = ("id", "username", "number_bb")
     list_display = ("id", "username", "number_bb", "email", )
+
+
+@admin.register(MarkedBusy)
+class MarkedBusyAdmin(admin.ModelAdmin):
+    search_fields = ("id", "mark_time", "trust_rate")
+    list_display = ("id", "user", "audience", "mark_time", "trust_rate", )
 
 
 @admin.register(Book)

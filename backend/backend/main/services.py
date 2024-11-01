@@ -552,6 +552,8 @@ def make_email_list(queue, number_of_audiences):
 
 def update_audience_day(week_day):
     for audience in Audience.objects.all():
+        log(f"============ WEEK DAY {week_day}", "i")
+        log(f"============ LEN {len(audience.week_pairs)}", "i")
         audience.day_history.pair = audience.week_pairs[week_day]
         log(f"99999999999 {audience.week_pairs[week_day]}", "i")
         audience.day_history.save()
@@ -584,10 +586,12 @@ def update_audience(time_slot: int):
 def clear_audience(time_slot: int):
     log(f"UPDATE: clear_audience", "i")
     # Очистка бронирований на текущий временной слот
-    audiences = Audience.objects.exclude(audience_status__name='Отсутствует для бронирования')
+    ## audiences = Audience.objects.exclude(audience_status__name='Отсутствует для бронирования')
+    # Очищаем бронирования всех аудиторий
+    audiences = Audience.objects.all()
     for audience in audiences:
-        log(f"UPDATE: clear_audience | number:{audience.number} | make free", "i")
-        audience.clear_booking(time_slot)
+        log(f"UPDATE: clear_audience | number={audience.number} | ts={time_slot - 1} | make free", "i")
+        audience.clear_booking(time_slot - 1)
         audience.save()
 
 

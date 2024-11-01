@@ -19,11 +19,11 @@ def queue_to_booking():
 
 
 @app.task
-def update_audience_regular(week_day):
-    # Обновление аудитории к заданномк времени
-    log(f"REGULAR UPDATE: +++ === +++ ={week_day}= +++ === +++", 'i')
-    update_audience(week_day)
-    log(f"REGULAR UPDATE: 000 === 000 ={week_day}= 000 === 000", 'i')
+def update_audience_regular(time_slot):
+    # Обновление аудитории к заданному времени
+    log(f"REGULAR UPDATE: +++ === +++ ={time_slot}= +++ === +++", 'i')
+    update_audience(time_slot)
+    log(f"REGULAR UPDATE: 000 === 000 ={time_slot}= 000 === 000", 'i')
 
 
 @app.task
