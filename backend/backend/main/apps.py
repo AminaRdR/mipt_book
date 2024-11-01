@@ -1,4 +1,5 @@
 from django.apps import AppConfig
+from main.services import log
 
 
 class MainConfig(AppConfig):
