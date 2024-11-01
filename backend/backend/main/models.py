@@ -96,6 +96,7 @@ class Audience(models.Model):
         for i in range(len(self.day_history.pair)):
             self.day_history.pair[i][1] = "Свободно"
         self.audience_status = AudienceStatus.objects.get(name="Свободно")
+        self.audience_status.save()
         self.day_history.save()
         self.save()
 

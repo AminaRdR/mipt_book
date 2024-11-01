@@ -552,11 +552,18 @@ def make_email_list(queue, number_of_audiences):
 
 def update_audience_day(week_day):
     for audience in Audience.objects.all():
-        log(f"============ WEEK DAY {week_day}", "i")
-        log(f"============ LEN {len(audience.week_pairs)}", "i")
-        audience.day_history.pair = audience.week_pairs[week_day]
-        log(f"99999999999 {audience.week_pairs[week_day]}", "i")
+        log(f"============ WEEK_DAY={week_day}"
+            f" LEN={len(audience.week_pairs)}"
+            f" AN={audience.number}", "i")
+        if week_day < 6:
+            # Обновляем понедельник - субботу
+            audience.day_history.pair = audience.week_pairs[week_day]
+            log(f"99999999999 {audience.week_pairs[week_day]}", "i")
+        elif week_day == 6:
+            # Обновляем воскресенье через очищение
+            audience.make_all_free()
         audience.day_history.save()
+        audience.save()
 
 
 def update_audience(time_slot: int):
