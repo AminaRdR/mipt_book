@@ -589,7 +589,6 @@ def update_audience(time_slot: int):
             email_title=email["title"])
 
 
-
 def clear_audience(time_slot: int):
     log(f"UPDATE: clear_audience", "i")
     # Очистка бронирований на текущий временной слот
