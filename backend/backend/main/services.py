@@ -1,6 +1,12 @@
 from requests.adapters import HTTPAdapter, Retry
 import asyncio
-from .models import Audience, UsersWallet, Book, AudienceStatus
+from .models import \
+    Audience, \
+    UsersWallet, \
+    Book, \
+    AudienceStatus, \
+    MarkedBusy, \
+    MarkedBooked
 from rest_framework.response import Response
 import datetime
 from rest_framework import status
@@ -8,6 +14,8 @@ import requests
 import json
 import logging
 import datetime
+from django.utils import timezone
+from datetime import timedelta
 from .config import \
     get_booking_text, \
     TIME_SLOT_DICT, \
@@ -229,6 +237,63 @@ def create_user_wallet(username, token="", email=""):
     users_wallet.save()
     log(f"Кошелёк пользователя успешно создан. U:{username}", "d")
     return users_wallet
+
+
+def mark_not_my_booking(user, booking):
+    if len(get_mark_busy_array(user)) > 5:
+        # В случае множественных сообщений обнуляем рейтинг доверия пользователя
+        setup_user_trust_rate(user, 0)
+    mark = MarkedBusy(
+        user=user,
+        audience=booking.audience,
+        trust_rate=user.trust_rate
+    )
+    mark.save()
+    recalculate_trust_rate(user)
+
+
+def mark_this_is_my_booking(user, booking):
+    mark = MarkedBooked(
+        user=user,
+        audience=booking.audience,
+        trust_rate=user.trust_rate
+    )
+    mark.save()
+    recalculate_trust_rate(user)
+
+
+def get_mark_busy_array(user):
+    yesterday = timezone.now() - timedelta(days=1)
+    mark_busy_array = MarkedBusy.objects.filter(
+        user=user,
+        mark_time__gte=yesterday)
+    return mark_busy_array
+
+
+def setup_user_trust_rate(user, trust_rate):
+    user = UsersWallet.objects.get(username=user.username)
+    user.trust_rate = trust_rate
+    user.save()
+
+
+def recalculate_trust_rate(user):
+    """ Функция для пересчёта рейтинга доверия к пользователю """
+    # Берём все бронирования за последние сутки
+    mark_busy_array = get_mark_busy_array(user)
+
+    # Устанавливаем рейтинг бронирования за последние сути на 1
+    # Даем пользователю кредит доверия на сегодня
+    final_rate = 1
+    for index,mark in enumerate(mark_busy_array):
+        if index != 0:
+            # Считаем временной зазор в секундах
+            time_gap = int(mark.mark_time.strftime('%s')) - int(mark_busy_array[index - 1].mark_time.strftime('%s'))
+            # Обрабатываем случай двойного клика
+            final_rate *= min(30, time_gap)/30
+    setup_user_trust_rate(user, final_rate)
+
+    log(f"FINAL TRUST RATE: tr={final_rate} username={user.username}", "i")
+    return final_rate
 
 
 def get_timetable():
