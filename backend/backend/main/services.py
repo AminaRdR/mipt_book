@@ -253,6 +253,7 @@ def mark_not_my_booking(user, booking):
 
 
 def mark_this_is_my_booking(user, booking):
+    """ Добавляем ответ на сообщение пользователя о занятости """
     mark = MarkedBooked(
         user=user,
         audience=booking.audience,
@@ -263,6 +264,7 @@ def mark_this_is_my_booking(user, booking):
 
 
 def get_mark_busy_array(user):
+    """ Получаем все занятые у=аудитории за сегодня """
     yesterday = timezone.now() - timedelta(days=1)
     mark_busy_array = MarkedBusy.objects.filter(
         user=user,
@@ -271,6 +273,7 @@ def get_mark_busy_array(user):
 
 
 def setup_user_trust_rate(user, trust_rate):
+    """ Устанавливаем рейтинг доверия пользователю """
     user = UsersWallet.objects.get(username=user.username)
     user.trust_rate = trust_rate
     user.save()
