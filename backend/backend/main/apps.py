@@ -50,7 +50,8 @@ class MainConfig(AppConfig):
         def update_audience_day(week_day):
             for audience in Audience.objects.all():
                 if week_day < 6:
-                    audience.day_history.pair = audience.week_pairs[week_day]
+                    # TODO: audience.week_pairs[week_day]
+                    audience.day_history.pair = audience.week_pairs[week_day-1]
                 elif week_day == 6:
                     audience.make_all_free()
                 audience.day_history.save()

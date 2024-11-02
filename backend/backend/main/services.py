@@ -21,6 +21,7 @@ from .config import \
     TIME_SLOT_DICT, \
     ADMIN_FOOTER_INFO, \
     TIME_SLOT_ARR
+from collections import namedtuple
 
 
 async def make_auth_request(token):
@@ -240,6 +241,7 @@ def create_user_wallet(username, token="", email=""):
 
 
 def mark_not_my_booking(user, booking):
+    """ Добавляем ответ на сообщение пользователя о занятости """
     if len(get_mark_busy_array(user)) > 5:
         # В случае множественных сообщений обнуляем рейтинг доверия пользователя
         setup_user_trust_rate(user, 0)
@@ -248,8 +250,11 @@ def mark_not_my_booking(user, booking):
         audience=booking.audience,
         trust_rate=user.trust_rate
     )
+    log(f"Запрос на занятость аудитории получен: "
+        f"user={user.username} booking={booking.audience.number}", "i")
     mark.save()
     recalculate_trust_rate(user)
+    update_busy_marks()
 
 
 def mark_this_is_my_booking(user, booking):
@@ -260,11 +265,14 @@ def mark_this_is_my_booking(user, booking):
         trust_rate=user.trust_rate
     )
     mark.save()
+    log("Запрос на нахождение в аудитории получен: "
+        "user={user.username} booking={booking.audience.number}", "i")
     recalculate_trust_rate(user)
+    update_busy_marks()
 
 
 def get_mark_busy_array(user):
-    """ Получаем все занятые у=аудитории за сегодня """
+    """ Получаем все занятые аудитории за сегодня """
     yesterday = timezone.now() - timedelta(days=1)
     mark_busy_array = MarkedBusy.objects.filter(
         user=user,
@@ -283,12 +291,15 @@ def recalculate_trust_rate(user):
     """ Функция для пересчёта рейтинга доверия к пользователю """
     # Берём все бронирования за последние сутки
     mark_busy_array = get_mark_busy_array(user)
+    log(f"Пересчёт рейтинга доверия: "
+        f"user={user.username}", "i")
 
     # Устанавливаем рейтинг бронирования за последние сути на 1
     # Даем пользователю кредит доверия на сегодня
     final_rate = 1
     for index,mark in enumerate(mark_busy_array):
         if index != 0:
+            log(f"{index}", "")
             # Считаем временной зазор в секундах
             time_gap = int(mark.mark_time.strftime('%s')) - int(mark_busy_array[index - 1].mark_time.strftime('%s'))
             # Обрабатываем случай двойного клика
@@ -297,6 +308,24 @@ def recalculate_trust_rate(user):
 
     log(f"FINAL TRUST RATE: tr={final_rate} username={user.username}", "i")
     return final_rate
+
+
+def update_busy_marks():
+    # Обновляем оценки по занятости аудиторий
+    log(f"Обновление занятых аудиторий", "i")
+    audiences = Audience.objects.all()
+    for audience in audiences:
+        busy_rate = 0
+        for busy_mark in MarkedBusy.objects.filter(audience=audience):
+            busy_rate += busy_mark.trust_rate
+        # При превышении суммарного рейтинга доверия числа - срабатывает
+        # Делаем аналог кросс-валидации
+        if busy_rate != 0:
+            log(f"Обновление статуса: number={audience.number} busy_rate={busy_rate} busy_barrier={0.5}", "i")
+            if busy_rate > 0.5:
+                audience.audience_status = AudienceStatus.objects.get(name="Занято")
+                audience.audience_status.save()
+                audience.save()
 
 
 def get_timetable():
