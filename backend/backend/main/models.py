@@ -83,6 +83,8 @@ class Audience(models.Model):
         self.save()
 
     def clear_booking(self, time_slot):
+        """ Очищаем бронирования и подгружаем данные из бронирований на сегодня """
+        # Если оно не отсутствует для бронирования, то делаем свободным
         if self.day_history.pair[time_slot][1] != "Отсутствует для бронирования":
             self.day_history.pair[time_slot][1] = "Свободно"
             self.audience_status = AudienceStatus.objects.get(name="Свободно")
@@ -311,7 +313,12 @@ class AudienceAdmin(admin.ModelAdmin):
     search_fields = ("id", "number", "description")
     list_display = ("id", "number", "building", "number_of_users", "audience_status",)
 
-    actions = ["make_free", "make_booked", "make_excluded", "make_all_free", "cancel_daily_booking"]
+    actions = ["make_free",
+               "make_booked",
+               "make_excluded",
+               "make_all_free",
+               "cancel_daily_booking",
+               "make_reserved"]
 
     @admin.action(description="Сделать свободными")
     def make_free(self, request, queryset):
@@ -326,6 +333,11 @@ class AudienceAdmin(admin.ModelAdmin):
     @admin.action(description="Исключить из бронирования")
     def make_excluded(self, request, queryset):
         excluded_status = AudienceStatus.objects.get(name="Отсутствует для бронирования")
+        queryset.update(audience_status=excluded_status)
+
+    @admin.action(description="Зарезервировать")
+    def make_reserved(self, request, queryset):
+        excluded_status = AudienceStatus.objects.get(name="Резерв")
         queryset.update(audience_status=excluded_status)
 
     @admin.action(description="Освободить все")

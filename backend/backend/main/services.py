@@ -254,8 +254,12 @@ def mark_not_my_booking(user, booking):
         log(f"Запрос на занятость аудитории получен: "
             f"user={user.username} booking={booking.audience.number}", "i")
         mark.save()
+        # Пересчитываем рейтинг доверия к пользователю
         recalculate_trust_rate(user)
+        # Обновляем оценки загруженности в соответствии с доверием
         update_busy_marks()
+        # Выдаём пользователю новую аудиторию
+        update_reserved_audience(booking)
 
 
 def mark_this_is_my_booking(user, booking):
@@ -268,6 +272,7 @@ def mark_this_is_my_booking(user, booking):
         )
         mark.save()
 
+        # Устанавливаем занятость аудиторий
         audience = Audience.objects.get(id=booking.audience.id)
         audience.audience_status = AudienceStatus.objacts.get(name="Занято")
         audience.audience_status.save()
@@ -275,8 +280,23 @@ def mark_this_is_my_booking(user, booking):
 
         log("Запрос на нахождение в аудитории получен: "
             "user={user.username} booking={booking.audience.number}", "i")
+        # Пересчитываем рейтинг доверия к пользователю
         recalculate_trust_rate(user)
+        # Обновляем оценки загруженности в соответствии с доверием
         update_busy_marks()
+
+
+def update_reserved_audience(booking):
+    log(f"Обновление зарезервированных аудиторий: booking={booking.audience.number}", "i")
+    free_audiences = \
+        Audience.objects.filter(
+            audience_status__name="Резерв")
+    log(f"Число аудиторий для замены: {len(free_audiences)}", "i")
+    if len(free_audiences) != 0:
+        log(f"Новая аудитория: number={free_audiences[0].number}", "i")
+        booking.audience = free_audiences[0]
+        booking.audience.save()
+        booking.save()
 
 
 def get_mark_busy_array(user):
@@ -513,7 +533,8 @@ def get_queue_item(booking) -> dict:
 
 def check_booking_availability(booking, time_slot):
     # Проверяем временную возможность бронирования на заданный временной слот
-    log(f"888888888888888888888888888888{booking.time_slot}88888888888{time_slot}888888888888888{booking.pair_number}", "i")
+    log(f"CHECK BOOKING AVAIL:"
+        f" b_ts={booking.time_slot} ts={time_slot} b_pn={booking.pair_number}", "i")
     if booking.time_slot <= time_slot < booking.time_slot + booking.pair_number:
         # Если бронирование вместе с количеством пар раньше по времени, чем
         # текущий временной слот, что бронирование удаляется (переноситься в историю)
@@ -673,17 +694,31 @@ def update_audience_day(week_day):
         audience.save()
 
 
+def create_reserve(building_name="ГК"):
+    free_audiences = Audience.objects.filter(audience_status__name="Свободно",
+                                             building__name=building_name)
+    for index,audience in enumerate(free_audiences):
+        if index < len(free_audiences)/3:
+            log(f"RESERVE: update_audience | number:{str(audience.number)}", "i")
+            audience.audience_status = AudienceStatus.objects.get(name="Резерв")
+            audience.audience_status.save()
+            audience.save()
+
+
 def update_audience(time_slot: int):
     log(f"UPDATE: update_audience", "i")
     # получаем список почт и аудиторий сделанный после проверки и создания очереди
     email_list, audience_list = check_queue_list(time_slot)
     log(f"UPDATE: update_audience | email_list:{str(email_list)}, audience_list:{str(audience_list)}", "i")
 
-    # очищаем занятые аудитории
+    # Очищаем бронирования, обновляем статусы и загружаем бронирования из расписания
     clear_audience(time_slot)
 
     # Загружаем бронирования в список на сайте
     load_booking(audience_list)
+
+    # Создаём резервирования аудиторий для ошибочной занятости
+    create_reserve()
 
     # Обновление email и их окончательная отправка
     new_email_list = update_email_list_by_stop_booking(email_list, audience_list, time_slot)
@@ -704,6 +739,7 @@ def clear_audience(time_slot: int):
     audiences = Audience.objects.all()
     for audience in audiences:
         log(f"UPDATE: clear_audience | number={audience.number} | ts={time_slot - 1} | make free", "i")
+        # Очищаем бронирования, обновляем статусы и загружаем бронирования из расписания
         audience.clear_booking(time_slot - 1)
         audience.save()
 

@@ -271,6 +271,10 @@ const hideAudienceInfo = () => {
       background: #FF6347;
     }
 
+    .background_Резерв {
+      background: #FF6347;
+    }
+
     .background_Свободно {
       background: #90EE90;
     }
