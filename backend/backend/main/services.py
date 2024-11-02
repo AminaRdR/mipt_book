@@ -517,16 +517,11 @@ def check_booking_availability(booking, time_slot):
     if booking.time_slot <= time_slot < booking.time_slot + booking.pair_number:
         # Если бронирование вместе с количеством пар раньше по времени, чем
         # текущий временной слот, что бронирование удаляется (переноситься в историю)
-        # if booking.time_slot + booking.pair_number <= time_slot:
-        #     booking.to_history()
-        log(f"88888888888 True", "i")
         return True
     else:
+        # Удаляем устаревшие бронирования
         if booking.time_slot + booking.pair_number <= time_slot:
             booking.to_history()
-            log(f"777777777 True", "i")
-        log(f"6666666 True", "i")
-    log(f"88888888888 False", "i")
     return False
 
 
