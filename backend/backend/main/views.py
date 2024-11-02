@@ -334,8 +334,8 @@ def index_stop_booking(request):
     #   "audience": "audience_number"
     # }
     if request.method == 'POST':
-        # data_request = json.loads(list(request.POST.dict())[0])
-        data_request = request.POST
+        data_request = json.loads(list(request.POST.dict())[0])
+        # data_request = request.POST
         try:
             token = data_request.get('token', '')
             audience_number = data_request.get('audience', '')
