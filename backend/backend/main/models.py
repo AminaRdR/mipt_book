@@ -83,6 +83,8 @@ class Audience(models.Model):
         self.save()
 
     def clear_booking(self, time_slot):
+        """ Очищаем бронирования и подгружаем данные из бронирований на сегодня """
+        # Если оно не отсутствует для бронирования, то делаем свободным
         if self.day_history.pair[time_slot][1] != "Отсутствует для бронирования":
             self.day_history.pair[time_slot][1] = "Свободно"
             self.audience_status = AudienceStatus.objects.get(name="Свободно")
@@ -96,6 +98,7 @@ class Audience(models.Model):
         for i in range(len(self.day_history.pair)):
             self.day_history.pair[i][1] = "Свободно"
         self.audience_status = AudienceStatus.objects.get(name="Свободно")
+        self.audience_status.save()
         self.day_history.save()
         self.save()
 
@@ -110,9 +113,65 @@ class UsersWallet(models.Model):
     email = models.CharField(max_length=255, blank=True)
     token = models.CharField(max_length=255, blank=True)
     number_bb = models.FloatField()
+    trust_rate = models.FloatField(default=1)  # рейтинг доверия пользователю
 
     def __str__(self):
         return f'UsersWallet: {self.username}|{self.number_bb}'
+
+    def clear_trust_rate(self):
+        self.trust_rate = 1
+
+
+class MarkedBusy(models.Model):
+    """ Класс для уведомления пользователем о том, что аудитория занята """
+    # Тот, кто уведомил систему
+    user = models.ForeignKey(
+        "UsersWallet",
+        on_delete=models.CASCADE,
+        related_name="marked_busy_users_wallet",
+        blank=True,
+        null=True)
+    # Номер аудитории о которой было упоминание
+    audience = models.ForeignKey(
+        "Audience",
+        on_delete=models.CASCADE,
+        related_name="marked_busy_audience",
+        blank=True,
+        null=True)
+
+    # Время упоминания
+    mark_time = models.TimeField(auto_now_add=True)
+    # Рейтинг доверия пользователя который проставил уведомление
+    trust_rate = models.FloatField(default=1)
+
+    def __str__(self):
+        return f'MarkedBusy: {self.user.username}|{self.mark_time}|{self.trust_rate}'
+
+
+class MarkedBooked(models.Model):
+    """ Класс для подтверждения того что пользователь в аудитории """
+    # Тот, кто уведомил систему
+    user = models.ForeignKey(
+        "UsersWallet",
+        on_delete=models.CASCADE,
+        related_name="marked_booked_users_wallet",
+        blank=True,
+        null=True)
+    # Номер аудитории о которой было упоминание
+    audience = models.ForeignKey(
+        "Audience",
+        on_delete=models.CASCADE,
+        related_name="marked_booked_audience",
+        blank=True,
+        null=True)
+
+    # Время упоминания
+    mark_time = models.TimeField(auto_now_add=True)
+    # Рейтинг доверия пользователя который проставил уведомление
+    trust_rate = models.FloatField(default=1)
+
+    def __str__(self):
+        return f'MarkedBooked: {self.user.username}|{self.mark_time}|{self.trust_rate}'
 
 
 class Book(models.Model):
@@ -254,7 +313,12 @@ class AudienceAdmin(admin.ModelAdmin):
     search_fields = ("id", "number", "description")
     list_display = ("id", "number", "building", "number_of_users", "audience_status",)
 
-    actions = ["make_free", "make_booked", "make_excluded", "make_all_free", "cancel_daily_booking"]
+    actions = ["make_free",
+               "make_booked",
+               "make_excluded",
+               "make_all_free",
+               "cancel_daily_booking",
+               "make_reserved"]
 
     @admin.action(description="Сделать свободными")
     def make_free(self, request, queryset):
@@ -269,6 +333,11 @@ class AudienceAdmin(admin.ModelAdmin):
     @admin.action(description="Исключить из бронирования")
     def make_excluded(self, request, queryset):
         excluded_status = AudienceStatus.objects.get(name="Отсутствует для бронирования")
+        queryset.update(audience_status=excluded_status)
+
+    @admin.action(description="Зарезервировать")
+    def make_reserved(self, request, queryset):
+        excluded_status = AudienceStatus.objects.get(name="Резерв")
         queryset.update(audience_status=excluded_status)
 
     @admin.action(description="Освободить все")
@@ -292,7 +361,19 @@ class AudienceAdmin(admin.ModelAdmin):
 @admin.register(UsersWallet)
 class UsersWalletAdmin(admin.ModelAdmin):
     search_fields = ("id", "username", "number_bb")
-    list_display = ("id", "username", "number_bb", "email", )
+    list_display = ("id", "username", "number_bb", "email", "trust_rate", )
+
+
+@admin.register(MarkedBusy)
+class MarkedBusyAdmin(admin.ModelAdmin):
+    search_fields = ("id", "mark_time", "trust_rate")
+    list_display = ("id", "user", "audience", "mark_time", "trust_rate", )
+
+
+@admin.register(MarkedBooked)
+class MarkedBookedAdmin(admin.ModelAdmin):
+    search_fields = ("id", "mark_time", "trust_rate")
+    list_display = ("id", "user", "audience", "mark_time", "trust_rate", )
 
 
 @admin.register(Book)

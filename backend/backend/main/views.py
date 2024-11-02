@@ -27,7 +27,9 @@ from .services import \
     send_email, \
     update_email, \
     get_time_slots, \
-    get_week_time_slots
+    get_week_time_slots, \
+    mark_not_my_booking, \
+    mark_this_is_my_booking
 import logging
 import datetime
 
@@ -333,20 +335,27 @@ def index_stop_booking(request):
     # }
     if request.method == 'POST':
         data_request = json.loads(list(request.POST.dict())[0])
+        # data_request = request.POST
         try:
-            if data_request.get('type') == "cancel_booking":
-                token = data_request.get('token', '')
-                audience_number = data_request.get('audience', '')
-                
-                log(f"CANCEL BOOKING: token={token} audience_number={audience_number}", "i")
+            token = data_request.get('token', '')
+            audience_number = data_request.get('audience', '')
+            check_token_result = asyncio.run(check_token(token))
+            # Проверяем токен на корректность
+            if check_token_result["result"]:
+                # Обновляем почту подгружая с сервиса авторизации
+                update_email_by_token(check_token_result)
 
-                check_token_result = asyncio.run(check_token(token))
-                if check_token_result["result"]:
-                    update_email_by_token(check_token_result)
-                    books = Book.objects.filter(audience__number=audience_number)
-                    booking_number = len(books)
-                    if booking_number == 1:
-                        book_item = Book.objects.get(audience__number=audience_number)
+                # Проверяем корректность бронирования
+                books = Book.objects.filter(audience__number=audience_number)
+                booking_number = len(books)
+                if booking_number == 1:
+                    # В случае если бронирование корректно работаем дальше с бронированием
+                    book_item = Book.objects.get(audience__number=audience_number)
+
+                    # Проверяем тип запроса на корректность
+                    if data_request.get('type') == "cancel_booking":
+                        log(f"CANCEL BOOKING: token={token} audience_number={audience_number}", "i")
+
                         email_address = book_item.user.email # book_item.user.email "kristal.as@phystech.edu"
                         username = book_item.user.username
                         book_item.to_history()
@@ -364,82 +373,65 @@ def index_stop_booking(request):
                                 "token": token
                             },
                             status=status.HTTP_201_CREATED)
-                    else:
-                        for booking in books:
-                            booking.to_history()
-                        log(f"Double booking of the audience: {audience_number}. Booking number: {booking_number}", "e")
+                    elif data_request.get('type') == "finalize_booking":
+                        log(f"FINALIZE BOOKING: token={token} audience_number={audience_number}", "i")
+
+                        email_address = book_item.user.email # book_item.user.email "kristal.as@phystech.edu"
+                        username = book_item.user.username
+                        book_item.to_history()
+
+                        # Собираем данные для отправки email сообщения
+                        email_text = get_stop_booking_text(username, audience_number)
+                        email_title = f"Прекращение бронирования аудитории {audience_number}"
+                        send_email(email_address, email_text, email_title)
+
+                        log(f"Stopping booking ended with success.", "i")
                         return Response(
                             {
-                                "Error": "BookingError",
-                                "value": f"length must be is 1, you got {booking_number}",
-                                "audience": f"{audience_number}"
+                                "result": True,
+                                "audience": audience_number,
+                                "token": token
                             },
-                            status=status.HTTP_501_NOT_IMPLEMENTED)
+                            status=status.HTTP_201_CREATED)
+                    elif data_request.get('type') == "not_my_booking":
+                        token = data_request.get('token', '')
+                        audience_number = data_request.get('audience', '')
+
+                        user = UsersWallet.objects.get(username=check_token_result['value']['username'])
+                        mark_not_my_booking(user=user, booking=book_item)
+
+                        log(f"NOT MY BOOKING: token={token} audience_number={audience_number}", "i")
+
+                        return Response({"Result": "good | not_my_booking"})
+
+                    elif data_request.get('type') == "this_is_my_booking":
+                        token = data_request.get('token', '')
+                        audience_number = data_request.get('audience', '')
+
+                        user = UsersWallet.objects.get(username=check_token_result['value']['username'])
+                        mark_this_is_my_booking(user=user, booking=book_item)
+
+                        log(f"THIS IS MY BOOKING: token={token} audience_number={audience_number}", "i")
+
+                        return Response({"Result": "good | this_is_my_booking"})
+                    else:
+                        log(f"BAD_REQUEST_TYPE. Type:{data_request.get('type')}", "e")
+                        return Response(
+                            {"Error": "BAD_REQUEST_TYPE"},
+                            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
                 else:
-                    log(f"Problems with checking token in stop booking. Token:{token}", "e")
-            elif data_request.get('type') == "finalize_booking":
-                token = data_request.get('token', '')
-                audience_number = data_request.get('audience', '')
-                
-                log(f"FINALIZE BOOKING: token={token} audience_number={audience_number}", "i")
-
-                check_token_result = asyncio.run(check_token(token))
-                if check_token_result["result"]:
-                    update_email_by_token(check_token_result)
-                    books = Book.objects.filter(audience__number=audience_number)
-                    booking_number = len(books)
-                    if booking_number == 1:
-                        book_item = Book.objects.get(audience__number=audience_number)
-                        email_address = book_item.user.email # book_item.user.email "kristal.as@phystech.edu"
-                        username = book_item.user.username
-                        book_item.to_history()
-
-                        # Собираем данные для отправки email сообщения
-                        email_text = get_stop_booking_text(username, audience_number)
-                        email_title = f"Прекращение бронирования аудитории {audience_number}"
-                        send_email(email_address, email_text, email_title)
-
-                        log(f"Stopping booking ended with success.", "i")
-                        return Response(
-                            {
-                                "result": True,
-                                "audience": audience_number,
-                                "token": token
-                            },
-                            status=status.HTTP_201_CREATED)
-                    else:
-                        for booking in books:
-                            booking.to_history()
-                        log(f"Double booking of the audience: {audience_number}. Booking number: {booking_number}", "e")
-                        return Response(
-                            {
-                                "Error": "BookingError",
-                                "value": f"length must be is 1, you got {booking_number}",
-                                "audience": f"{audience_number}"
-                            },
-                            status=status.HTTP_501_NOT_IMPLEMENTED)
-
-            elif data_request.get('type') == "not_my_booking":
-                token = data_request.get('token', '')
-                audience_number = data_request.get('audience', '')
-                
-                log(f"NOT MY BOOKING: token={token} audience_number={audience_number}", "i")
-                
-                return Response({"Error": "Error"})
-        
-            elif data_request.get('type') == "this_is_my_booking":
-                token = data_request.get('token', '')
-                audience_number = data_request.get('audience', '')
-                
-                log(f"THIS IS MY BOOKING: token={token} audience_number={audience_number}", "i")
-
-                return Response({"Error": "Error"})
-            
+                    for booking in books:
+                        booking.to_history()
+                    log(f"Double booking of the audience: {audience_number}. Booking number: {booking_number}", "e")
+                    return Response(
+                        {
+                            "Error": "BookingError",
+                            "value": f"length must be is 1, you got {booking_number}",
+                            "audience": f"{audience_number}"
+                        },
+                        status=status.HTTP_501_NOT_IMPLEMENTED)
             else:
-                log(f"BAD_REQUEST_TYPE. Type:{data_request.get('type')}", "e")
-                return Response(
-                    {"Error": "BAD_REQUEST_TYPE"},
-                    status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+                log(f"Problems with checking token in stop booking. Token:{token}", "e")
         except ConnectionError as e:
             log(f"ConnectionError. Error:{e}", "e")
             return Response(
@@ -459,4 +451,5 @@ def update_email_by_token(check_token_result):
     user_name = check_token_result['value']['username']
     email = check_token_result['value']['email']
     update_email(user_name, email)
+    return user_name
 
