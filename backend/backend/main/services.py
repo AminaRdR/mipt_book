@@ -245,30 +245,38 @@ def mark_not_my_booking(user, booking):
     if len(get_mark_busy_array(user)) > 5:
         # В случае множественных сообщений обнуляем рейтинг доверия пользователя
         setup_user_trust_rate(user, 0)
-    mark = MarkedBusy(
-        user=user,
-        audience=booking.audience,
-        trust_rate=user.trust_rate
-    )
-    log(f"Запрос на занятость аудитории получен: "
-        f"user={user.username} booking={booking.audience.number}", "i")
-    mark.save()
-    recalculate_trust_rate(user)
-    update_busy_marks()
+    if validate_booking(booking):
+        mark = MarkedBusy(
+            user=user,
+            audience=booking.audience,
+            trust_rate=user.trust_rate
+        )
+        log(f"Запрос на занятость аудитории получен: "
+            f"user={user.username} booking={booking.audience.number}", "i")
+        mark.save()
+        recalculate_trust_rate(user)
+        update_busy_marks()
 
 
 def mark_this_is_my_booking(user, booking):
     """ Добавляем ответ на сообщение пользователя о занятости """
-    mark = MarkedBooked(
-        user=user,
-        audience=booking.audience,
-        trust_rate=user.trust_rate
-    )
-    mark.save()
-    log("Запрос на нахождение в аудитории получен: "
-        "user={user.username} booking={booking.audience.number}", "i")
-    recalculate_trust_rate(user)
-    update_busy_marks()
+    if validate_booking(booking):
+        mark = MarkedBooked(
+            user=user,
+            audience=booking.audience,
+            trust_rate=user.trust_rate
+        )
+        mark.save()
+
+        audience = Audience.objects.get(id=booking.audience.id)
+        audience.audience_status = AudienceStatus.objacts.get(name="Занято")
+        audience.audience_status.save()
+        audience.save()
+
+        log("Запрос на нахождение в аудитории получен: "
+            "user={user.username} booking={booking.audience.number}", "i")
+        recalculate_trust_rate(user)
+        update_busy_marks()
 
 
 def get_mark_busy_array(user):
@@ -316,7 +324,12 @@ def update_busy_marks():
     audiences = Audience.objects.all()
     for audience in audiences:
         busy_rate = 0
-        for busy_mark in MarkedBusy.objects.filter(audience=audience):
+        # Определяем временной промежуток в один час для корректности
+        last_hour = timezone.now() - timedelta(hours=1)
+        # Выбираем те упоминания которые могут соответствовать, т.е. час
+        for busy_mark in MarkedBusy.objects.filter(
+                audience=audience,
+                mark_time__gte=last_hour):
             busy_rate += busy_mark.trust_rate
         # При превышении суммарного рейтинга доверия числа - срабатывает
         # Делаем аналог кросс-валидации
@@ -326,6 +339,8 @@ def update_busy_marks():
                 audience.audience_status = AudienceStatus.objects.get(name="Занято")
                 audience.audience_status.save()
                 audience.save()
+                # Удаляем упоминания о занятости аудиторий
+                MarkedBusy.objects.filter(audience=audience).delete()
 
 
 def get_timetable():
@@ -742,3 +757,45 @@ def update_email_list_by_stop_booking(email_list, audience_list, time_slot):
                     "text": email_test
                 })
     return email_list
+
+
+def validate_booking(booking):
+    """ Запрос на корректность бронирования и уведомления от пользователя """
+    time_slot = get_time_slot()
+    if booking.time_slot <= time_slot < booking.time_slot + booking.pair_number:
+        log(f"Корректность подтверждена: number={booking.audience.number}", "i")
+        return True
+    log(f"Заявка от пользователя не корректна: "
+        f"number={booking.audience.number} "
+        f"time_slot={time_slot} "
+        f"booking.time_slot={booking.time_slot} "
+        f"booking.time_slot + booking.pair_number={booking.time_slot + booking.pair_number}", "i")
+    return False
+
+
+def get_time(time_string):
+    return datetime.datetime.strptime(time_string, "%H:%M")
+
+
+def get_time_slot():
+    CurrentPair = namedtuple('CurrentPair', ['number', 'start_time', 'end_time'])
+    current_pair_list = [
+        CurrentPair(1, "09:00", "10:25"),
+        CurrentPair(2, "10:25", "12:10"),
+        CurrentPair(3, "12:10", "13:55"),
+        CurrentPair(4, "13:55", "15:30"),
+        CurrentPair(5, "15:30", "17:05"),
+        CurrentPair(6, "17:05", "18:30"),
+        CurrentPair(7, "18:30", "20:00"),
+        CurrentPair(8, "20:00", "22:00"),
+        CurrentPair(9, "22:00", "23:59"),
+        CurrentPair(10, "00:00", "01:30"),
+        CurrentPair(11, "01:30", "03:00"),
+        CurrentPair(12, "03:00", "04:30"),
+        CurrentPair(13, "04:30", "06:00")]
+    now = datetime.datetime.now()
+
+    for current_pair in current_pair_list:
+        if get_time(current_pair.start_time).time() < now.time() < get_time(current_pair.end_time).time():
+            return current_pair.number
+    return -1
