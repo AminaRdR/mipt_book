@@ -14,6 +14,7 @@ RUN pip install confluent_kafka
 RUN pip install kafka-python
 RUN pip install aiohttp
 RUN pip install gevent
+RUN pip install whitenoise
 
 COPY . .
 
