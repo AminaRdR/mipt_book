@@ -242,8 +242,11 @@ def create_user_wallet(username, token="", email=""):
 
 def mark_not_my_booking(user, booking):
     """ Добавляем ответ на сообщение пользователя о занятости """
+    log(f"Начло маркировки о занятости: mark_not_my_booking", "i")
     if len(get_mark_busy_array(user)) > 5:
+        log(f"Маркировка недобросовестным пользователем: {user.username}", "i")
         # В случае множественных сообщений обнуляем рейтинг доверия пользователя
+
         setup_user_trust_rate(user, 0)
     if validate_booking(booking):
         mark = MarkedBusy(
@@ -801,7 +804,8 @@ def validate_booking(booking):
         f"time_slot={time_slot} "
         f"booking.time_slot={booking.time_slot} "
         f"booking.time_slot + booking.pair_number={booking.time_slot + booking.pair_number}", "i")
-    return False
+    return True
+    # return False
 
 
 def get_time(time_string):

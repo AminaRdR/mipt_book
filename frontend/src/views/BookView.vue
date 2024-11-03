@@ -74,7 +74,7 @@ onMounted(()=>{
           router.push("/auth/login/").then(()=>{
             router.go(0); // force reload
           });
-      }, 6500);
+      }, 4000);
   }
   window.scrollTo({
     top: 1000,
