@@ -18,6 +18,7 @@ from django.urls import path, include
 from main import views
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework import routers
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 # router.register(r'history', views.BookHistoryViewSet)
 
@@ -39,3 +40,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('test/', include('test.urls', namespace='test')),
 ]
+urlpatterns += staticfiles_urlpatterns()

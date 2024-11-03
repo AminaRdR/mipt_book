@@ -30,3 +30,5 @@ secure_scheme = 'https'
 
 # Установка прокси-заголовков для правильной обработки IP-адресов (если требуется)
 for_x_forwarded_proto = 'https' 
+
+static_root = '/static/'
