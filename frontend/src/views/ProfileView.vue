@@ -491,7 +491,7 @@ function selectOption(option: string) {
                     </div>
         
 		    <div class="right-element">
-                        <img src="@/assets/sania.png" class="profile-pic" alt="Ваша фотография">
+                        <img src="@/assets/2.jpg" class="profile-pic" style="width: 150px;" alt="Ваша фотография">
                     </div>
                 </div>
 

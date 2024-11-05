@@ -189,7 +189,7 @@ def book_audience(request):
                 for number, time_slot_name in TIME_SLOT_DICT.items():
                     if time_slot_name == data_request.get('time_slot', "00:00"):
                         time_slot = number
-                log(f"========================{time_slot}", "i")
+                log(f"========================{time_slot} {data_request.get('time_slot', '00:00')}", "i")
                 
                 return get_book_audience_response(
                     number=data_request.get('audience'),

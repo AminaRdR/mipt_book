@@ -76,8 +76,9 @@ class Audience(models.Model):
     def __str__(self):
         return f'Audience: {self.number}|{self.building.name}'
 
-    def make_free(self, time_slot):
-        self.day_history.pair[time_slot][1] = "Свободно"
+    def make_free(self, time_slot, pair_number=1):
+        for i in range(pair_number):
+            self.day_history.pair[time_slot+i][1] = "Свободно"
         self.audience_status = AudienceStatus.objects.get(name="Свободно")
         self.day_history.save()
         self.save()
@@ -200,7 +201,7 @@ class Book(models.Model):
 
     def to_history(self):
         audience = Audience.objects.get(number=self.audience.number)
-        audience.make_free(time_slot=self.pair_number)
+        audience.make_free(time_slot=self.time_slot, pair_number=self.pair_number)
 
         history_booking = BookHistory(
             audience=self.audience.number,  # CharField
