@@ -79,6 +79,16 @@ class User(AbstractUser):
     def __str__(self):
         return f'{self.username}'
 
+    def add_preference(self, preference_name):
+        preference = Preferences.objects.filter(name=preference_name)
+        if len(preference) == 1:
+            self.preferences.add(preference[0])
+
+    def remove_preference(self, preference_name):
+        preference = Preferences.objects.filter(name=preference_name)
+        if len(preference) == 1:
+            self.preferences.remove(preference[0])
+
 
 class InstituteGroupDayHistory(models.Model):
     institute_group = models.ForeignKey(

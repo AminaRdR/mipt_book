@@ -39,6 +39,7 @@ class IndexAuth(APIView):
             'book_rate': request.user.book_rate,
             'institute_group': request.user.institute_group.name,
             'user_role': request.user.user_role.name
+            #'preferences': request.user.preferences.all()
         }
         log(f"Запрос на получение информации о пользователе, U:{request.user.username}", "i")
         return Response(content)
@@ -166,6 +167,16 @@ def edit_user_name(request):
                                 "Description": "Wrong group name"
                             },
                             status=status.HTTP_406_NOT_ACCEPTABLE)
+                elif data_request.get('type') == "add_preference":
+                    log(f"Редактирование предпочтений пользователя", "i")
+                    preference_name  = data_request.get("preference_name", "Тихо")
+                    user.add_preference(preference_name)
+                    return Response({"Result": "True"}, status=status.HTTP_202_ACCEPTED)
+                elif data_request.get('type') == "remove_preference":
+                    log(f"Редактирование предпочтений пользователя", "i")
+                    preference_name  = data_request.get("preference_name", "Тихо")
+                    user.remove_preference(preference_name)
+                    return Response({"Result": "True"}, status=status.HTTP_202_ACCEPTED)
                 else:
                     log(f"Неправильный тип запроса, T:{data_request.get('type')}", "e")
                     return Response(
