@@ -68,7 +68,9 @@ class User(AbstractUser):
         null=True)
     preferences = models.ManyToManyField(
         Preferences,
-        blank=True)
+        related_name='user_preferences',
+        blank=True,
+        null=True)
     user_role = models.ForeignKey(
         Role,
         on_delete=models.CASCADE,

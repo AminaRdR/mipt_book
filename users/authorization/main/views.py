@@ -27,7 +27,11 @@ from .services import \
 class IndexAuth(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
+    def get(self, request): 
+        preferences = {}
+        for preference in request.user.preferences.all():
+            preferences[preference.name] = preference.description
+
         content = {
             'username': request.user.username,
             'name': {
@@ -38,8 +42,8 @@ class IndexAuth(APIView):
             'email': request.user.email,
             'book_rate': request.user.book_rate,
             'institute_group': request.user.institute_group.name,
-            'user_role': request.user.user_role.name
-            #'preferences': request.user.preferences.all()
+            'user_role': request.user.user_role.name,
+            'preferences': preferences
         }
         log(f"Запрос на получение информации о пользователе, U:{request.user.username}", "i")
         return Response(content)
