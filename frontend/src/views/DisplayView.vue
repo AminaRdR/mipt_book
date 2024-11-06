@@ -206,7 +206,7 @@ async function loadTimeSlots(my_audience_number: string){
     time_slots_arr.length = 0;
     const data_number = await response.json();
     console.log('============', data_number.data[0].day_history);
-    for (let i = 1; i < data_number.data[0].day_history.length; i++){
+    for (let i = 0; i < data_number.data[0].day_history.length; i++){
 	time_slots_arr.push(data_number.data[0].day_history[i]);
     }
     time_slots_arr_length = time_slots_arr.length;
