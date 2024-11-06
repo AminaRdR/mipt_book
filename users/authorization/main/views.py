@@ -94,6 +94,7 @@ def register_user(request):
         log(f"Начало регистрации пользователя", "i")
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
+            return Response("Регистрация запрещена", status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             username = serializer.data.get('username', 'test_user')
             user = User.objects.get(username=username)

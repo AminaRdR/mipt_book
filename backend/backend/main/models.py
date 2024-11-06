@@ -216,6 +216,14 @@ class Book(models.Model):
         Book.objects.filter(id=self.id).delete()
         pass
 
+    def load_booking(self):
+        for i in range(self.pair_number):
+            if (self.time_slot+i) < len(self.audience.day_history.pair):
+                # log(f"===== Отметка о брониа аудитории: ts={time_slot+i} number={number}", "i")
+                self.audience.day_history.pair[self.time_slot+i][1] = "Забронировано"
+        self.audience.day_history.save()
+        self.audience.save()
+
     def clear_booked_audiences(self):
         pass
 
