@@ -27,7 +27,11 @@ from .services import \
 class IndexAuth(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
+    def get(self, request): 
+        preferences = {}
+        for preference in request.user.preferences.all():
+            preferences[preference.name] = preference.description
+
         content = {
             'username': request.user.username,
             'name': {
@@ -38,7 +42,8 @@ class IndexAuth(APIView):
             'email': request.user.email,
             'book_rate': request.user.book_rate,
             'institute_group': request.user.institute_group.name,
-            'user_role': request.user.user_role.name
+            'user_role': request.user.user_role.name,
+            'preferences': preferences
         }
         log(f"Запрос на получение информации о пользователе, U:{request.user.username}", "i")
         return Response(content)
@@ -94,6 +99,7 @@ def register_user(request):
         log(f"Начало регистрации пользователя", "i")
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
+            return Response("Регистрация запрещена", status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             username = serializer.data.get('username', 'test_user')
             user = User.objects.get(username=username)
@@ -165,6 +171,16 @@ def edit_user_name(request):
                                 "Description": "Wrong group name"
                             },
                             status=status.HTTP_406_NOT_ACCEPTABLE)
+                elif data_request.get('type') == "add_preference":
+                    log(f"Редактирование предпочтений пользователя", "i")
+                    preference_name  = data_request.get("preference_name", "Тихо")
+                    user.add_preference(preference_name)
+                    return Response({"Result": "True"}, status=status.HTTP_202_ACCEPTED)
+                elif data_request.get('type') == "remove_preference":
+                    log(f"Редактирование предпочтений пользователя", "i")
+                    preference_name  = data_request.get("preference_name", "Тихо")
+                    user.remove_preference(preference_name)
+                    return Response({"Result": "True"}, status=status.HTTP_202_ACCEPTED)
                 else:
                     log(f"Неправильный тип запроса, T:{data_request.get('type')}", "e")
                     return Response(

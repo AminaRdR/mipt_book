@@ -46,6 +46,7 @@ class MainConfig(AppConfig):
     def ready(self):
         logging.info("START SETTING UP APPLICATION")
         Audience = self.get_model("Audience")
+        Book = self.get_model("Book")
 
         def update_audience_day(week_day):
             for audience in Audience.objects.all():
@@ -63,10 +64,18 @@ class MainConfig(AppConfig):
                 audience.clear_booking(time_slot - 1)
                 audience.save()
 
+
+        def load_booking():
+            all_books = Book.objects.all()
+            for book in all_books:
+                book.load_booking()
+
         my_week_day = get_week_day()
         my_time_slot = get_time_slot()
         update_audience_day(my_week_day)
         clear_audience(my_time_slot)
+
+        load_booking()
 
         run_command_after_startup()
 

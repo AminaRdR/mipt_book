@@ -242,8 +242,11 @@ def create_user_wallet(username, token="", email=""):
 
 def mark_not_my_booking(user, booking):
     """ Добавляем ответ на сообщение пользователя о занятости """
+    log(f"Начло маркировки о занятости: mark_not_my_booking", "i")
     if len(get_mark_busy_array(user)) > 5:
+        log(f"Маркировка недобросовестным пользователем: {user.username}", "i")
         # В случае множественных сообщений обнуляем рейтинг доверия пользователя
+
         setup_user_trust_rate(user, 0)
     if validate_booking(booking):
         mark = MarkedBusy(
@@ -413,6 +416,34 @@ def get_book_audience_response(
         pair_number: int,
         time_slot: int):
     log(f"BOOK_AUDIENCE number={number} user={user} email={email} number_bb={number_bb} pair_number={pair_number} time_slot={time_slot}", "i")
+    
+    if len(Book.objects.filter(user=get_user_by_username(user))) > 0:
+        log(f"Бронирование пользователя уже существует: u={user} number={number}", "i")
+        return Response(
+            {
+                "result": False,
+                "Error": f"Бронирование пользователя уже существует: u={user} number={number}" 
+            },
+            status=status.HTTP_204_NO_CONTENT)
+
+    if get_audience_by_number(number) is None:
+        log(f"Аудитория отсутствует: u={user} number={number}", "i")
+        return Response(
+            {
+                "result": False,
+                "Error": f"Аудитории не существует: u={user} number={number}"
+            },
+            status=status.HTTP_204_NO_CONTENT)
+
+    if get_user_by_username(user) is None:
+        log(f"Пользователь отсутствует: u={user} number={number}", "i")
+        return Response(
+            {
+                "result": False,
+                "Error": f"Пользователя не существует: u={user} number={number}"
+            },
+            status=status.HTTP_204_NO_CONTENT)
+    
     new_book = Book(
         audience=get_audience_by_number(number),
         user=get_user_by_username(user),
@@ -428,6 +459,14 @@ def get_book_audience_response(
     if audience.day_history.pair[pair_number][1] == "Свободно":
         # Останавливаем мгновенные бронирования
         ## audience.day_history.pair[pair_number][1] = "Занято"
+
+        for i in range(pair_number):
+            if (time_slot+i) < len(audience.day_history.pair):
+                log(f"===== Отметка о брониа аудитории: ts={time_slot+i} number={number}", "i")
+                audience.day_history.pair[time_slot+i][1] = "Забронировано"
+        audience.day_history.save()
+        audience.save()
+
         log(f"Изменена дневная история. A:{number}, P:{pair_number}", "d")
         ## audience.day_history.pair[pair_number][2] = user
         log(f"Изменён пользователь дневной истории. A:{number}, U:{user}", "d")
@@ -801,7 +840,8 @@ def validate_booking(booking):
         f"time_slot={time_slot} "
         f"booking.time_slot={booking.time_slot} "
         f"booking.time_slot + booking.pair_number={booking.time_slot + booking.pair_number}", "i")
-    return False
+    return True
+    # return False
 
 
 def get_time(time_string):

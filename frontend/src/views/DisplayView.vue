@@ -2,6 +2,7 @@
 
 import Header from "@/components/TheHeader.vue";
 import {ref, type Ref, onMounted, reactive, type Reactive, defineExpose, provide, inject} from 'vue';
+import { useRouter } from 'vue-router';
 
 
 interface Audience_status {
@@ -42,6 +43,59 @@ interface Building {
 // const web_site = "localhost";
 // const web_site = "127.0.0.1";
 const web_site = inject('web_site');
+const time_slot_dictionary = {
+        "09:00": 1,
+        "10:45": 2,
+	"12:20": 3,
+	"13:45": 4,
+	"15:30": 5,
+	"17:05": 6,
+	"18:35": 7,
+	"20:00": 8,
+	"22:00": 9,
+	"23:59": 10,
+	"01:30": 11,
+	"03:00": 12,
+	"04:30": 13,
+	"06:00": 14
+      };
+
+const time_slot_arr = [
+	"09:00",
+        "09:00",
+        "10:45",
+        "12:20",
+        "13:45",
+        "15:30",
+        "17:05",
+        "18:35",
+        "20:00",
+        "22:00",
+        "23:59",
+        "01:30",
+        "03:00",
+        "04:30",
+        "06:00"
+      ];
+
+function time_slot_dictionary_func(time_slot: string){
+        if (time_slot == "09:00") { return 1;
+        } else if (time_slot == "10:45") { return 2;
+        } else if (time_slot == "12:20") { return 3;
+        } else if (time_slot == "13:45") { return 4;
+        } else if (time_slot == "15:30") { return 5;
+        } else if (time_slot == "17:05") { return 6;
+        } else if (time_slot == "18:35") { return 7;
+        } else if (time_slot == "20:00") { return 8;
+        } else if (time_slot == "22:00") { return 9;
+        } else if (time_slot == "23:59") { return 10;
+        } else if (time_slot == "01:30") { return 11;
+        } else if (time_slot == "03:00") { return 12;
+        } else if (time_slot == "04:30") { return 13;
+        } else if (time_slot == "06:00") { return 14;
+        }
+	return 0;
+}
 
 let time_slots_arr_length = 1;
 let time_slots_arr: any[] = reactive([]);
@@ -50,10 +104,61 @@ let audiences: Ref<Audience[]> = ref([]);
 let audiences_gk: Ref<Audience[]> = ref([]);
 let audiences_lk: Ref<Audience[]> = ref([]);
 
+const router = useRouter();
+
+let token = ref<string|null>(null);
+let username = ref<string|null>(null);
+let form_number_bb = ref<number|null>(null);
+let form_time_slot = ref<number|0>(0);
+let form_end_time_slot = ref<number|0>(1);
+let form_pair_number = ref<number|0>(1);
+let form_audience = ref<string|null>(null);
+
 onMounted(()=>{
-  // username.value = localStorage.getItem("username");
+  token.value = localStorage.getItem("auth-token");
+  username.value = localStorage.getItem("username");
   loadAudience();
+  form_number_bb.value = 0;
+  form_end_time_slot.value = 0;
+  form_pair_number.value = 0;
+  form_end_time_slot.value = 0;
 });
+
+async function sendForm(){
+  try {
+    const response = await fetch("https://" + web_site + ":8000/book/",{
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: JSON.stringify({
+        "type": "book_audience",
+        'token': token.value,
+        'audience': form_audience.value,
+        'number_bb': form_number_bb.value,
+        'pair_number': form_pair_number.value,
+        'time_slot': time_slot_arr[form_time_slot.value],
+        'user': username.value
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Сеть ответила с ошибкой: ' + response.status);
+    }
+    if (response.ok) {
+        const data = await response.json();
+        console.log('Ответ от сервера:', data);
+	setTimeout(()=>{
+          router.push("/book-history/").then(()=>{
+            router.go(0); // force reload
+          });
+      	}, 2000);
+    } else {
+        console.error('Ошибка запроса:', response.status);
+    }
+
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+  }
+}
 
 async function loadAudience(){
   try {
@@ -101,7 +206,7 @@ async function loadTimeSlots(my_audience_number: string){
     time_slots_arr.length = 0;
     const data_number = await response.json();
     console.log('============', data_number.data[0].day_history);
-    for (let i = 1; i < data_number.data[0].day_history.length; i++){
+    for (let i = 0; i < data_number.data[0].day_history.length; i++){
 	time_slots_arr.push(data_number.data[0].day_history[i]);
     }
     time_slots_arr_length = time_slots_arr.length;
@@ -138,10 +243,33 @@ let audience_number = ref<string|null>(null);
 
 
 const showAudienceInfo = (my_audience_number: string) => {
+  form_audience.value = my_audience_number;
   audience_number.value = my_audience_number;
   loadTimeSlots(my_audience_number);
   showPopupRateInfo.value = true;
 };
+
+const updateTimeSlot = (time_slot_str: string) => {
+  if ((time_slot_str in time_slot_dictionary)) {
+  	let time_slot = time_slot_dictionary_func(time_slot_str);
+    	if ((form_time_slot.value != null ) && (form_time_slot.value > time_slot)){
+        	form_time_slot.value = time_slot;
+        	form_pair_number.value = form_end_time_slot.value - form_time_slot.value + 1;
+  	}
+  	if ((form_time_slot.value != null ) && (form_end_time_slot.value < time_slot)){
+        	form_end_time_slot.value = time_slot;
+        	form_pair_number.value = form_end_time_slot.value - form_time_slot.value + 1;
+  	}
+  	if (form_time_slot.value == 0 ){
+        	form_time_slot.value = time_slot;
+        	form_end_time_slot.value = time_slot;
+        	form_pair_number.value = form_end_time_slot.value - form_time_slot.value + 1;
+  	}
+  } else {
+        console.error(`Ошибка: Ключ ${time_slot_str} не найден в словаре.`);
+  }
+};
+
 
 const hideAudienceInfo = () => {
   showPopupRateInfo.value = false;
@@ -178,7 +306,7 @@ const hideAudienceInfo = () => {
 				<p>Номер аудитории:</p>
 				<p class="time">{{audience_number}} ГК  </p>
 			</div>
-			<div class="time-slot" v-for="time_slot in time_slots_arr">
+		        <!-- div class="time-slot" v-for="time_slot in time_slots_arr">
 			    <div style="display: flex; justify-content: space-between;">
 				<p class="time">Время:{{time_slot[0]}}</p>   
 				<p style="padding-left: 10px;">{{time_slot[1]}}</p>
@@ -188,8 +316,25 @@ const hideAudienceInfo = () => {
 				<p>{{time_slot[3]}} ед.</p>
 			    </div>
 			    <p class="event">Мероприятие: {{time_slot[2]}}</p>
-			</div>
-			<button @click="hideAudienceInfo" style="background-color: #dc3545; width: 100%;  color: white;padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;">Закрыть</button>
+		        </div> -->
+			<form @submit.prevent="sendForm">
+				<div v-for="time_slot in time_slots_arr">
+			    		<div :class="['time-slot-new', `background_${time_slot[1]}`]">
+						<div style="display: flex; justify-content: space-between;">
+                                			<p class="time">{{time_slot[0]}}</p>
+                                			<p v-if="time_slot[1] == 'Отсутствует для бронирования'" style="padding-left: 10px;">{{time_slot[6]}}</p>
+							<p v-if="time_slot[1] == 'Забронировано'" style="padding-left: 10px;">Забронировано</p>
+							<p v-if="time_slot[1] == 'Свободно'" style="padding-left: 10px;">Свободно</p>
+							<input v-if="time_slot[1] == 'Забронировано'" @click="updateTimeSlot(`${time_slot[0]}`)" type="checkbox" id="scales" name="scales" style="width: 20px;"/>
+							<input v-if="time_slot[1] == 'Свободно'" @click="updateTimeSlot(`${time_slot[0]}`)" type="checkbox" id="scales" name="scales" style="width: 20px;"/>
+						</div>
+                            		</div>
+                        	</div>
+				<p>Время начала: {{ time_slot_arr[form_time_slot] }}</p>
+				<p>Время окончания:{{ time_slot_arr[form_end_time_slot + 1] }}</p>
+				<p>Число пар: {{ form_pair_number }} шт.</p>
+				<button type="submit" @click="hideAudienceInfo" style="background-color: #4caf50; width: 100%;  color: white; padding: 10px 20px;border: none;border-radius: 5px;cursor: pointer;"><h3>Забронировать</h3></button>
+		    	</form>
 		    </div>
                 </div>
 	</transition>
@@ -242,6 +387,9 @@ const hideAudienceInfo = () => {
       grid-template-columns: repeat(auto-fit, minmax(100px, 150px));
       grid-column-gap: 20px;
     }
+    .time-slot-new {
+  	min-width: 70vw;
+    }
   }
 
   @media (min-width: 768px) {
@@ -250,6 +398,10 @@ const hideAudienceInfo = () => {
       grid-template-columns: repeat(auto-fit, minmax(100px, 150px));
       grid-column-gap: 20px;
     }
+    .time-slot-new {
+        min-width: 30vw;
+    }
+
   }
 
 
@@ -281,6 +433,10 @@ const hideAudienceInfo = () => {
 
     .background_Скоро {
       background: #FFFFE0;
+    }
+
+    .background_Забронировано {
+      background: #FFAB42;
     }
 
     .background_Отсутствует {
@@ -354,6 +510,17 @@ const hideAudienceInfo = () => {
 
 .time-slot p {
   margin-bottom: 5px;
+}
+
+.time-slot-new {
+  border: 1px solid #ccc;
+  padding: 2px;
+  margin-bottom: 0px;
+  border-radius: 5px;
+}
+
+.time-slot-new p {
+  margin-bottom: 0px;
 }
 
 .time {

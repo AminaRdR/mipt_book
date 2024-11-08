@@ -46,6 +46,7 @@ const user_name: Reactive<UserName> = reactive({
 let institute_group: Ref<string|null> = ref(null);
 let book_rating: Ref<number> = ref(1);
 let preferences: Ref<Preference[]> = ref([]);
+let user_preferences: Ref<Preference[]> = ref([]);
 let institute_groups: Ref<InstituteGroup[]> = ref([]);
 
 
@@ -155,7 +156,8 @@ async function loadInfo(){
       email: string,
       book_rate: number,
       institute_group: string,
-      user_role: string
+      user_role: string,
+      preferences: Preference[]
     };
 
     localStorage.setItem("username", data.username);
@@ -168,6 +170,12 @@ async function loadInfo(){
     user_name.third_name = data.name.third_name;
     institute_group.value = data.institute_group;
     book_rating.value = data.book_rate;
+    // user_preferences.value = data.preferences;
+
+    const data_user_preferences = await data.preferences as Preference[];
+    user_preferences.value = data_user_preferences;
+
+    console.log('Предпочтения: ', user_preferences.value[0], user_preferences.value, data.preferences);
   } catch (error) {
     console.error('Ошибка при отправке данных:', error);
   }
@@ -491,7 +499,7 @@ function selectOption(option: string) {
                     </div>
         
 		    <div class="right-element">
-                        <img src="@/assets/sania.png" class="profile-pic" alt="Ваша фотография">
+                        <img src="@/assets/2.jpg" class="profile-pic" style="width: 150px;" alt="Ваша фотография">
                     </div>
                 </div>
 
@@ -566,6 +574,14 @@ function selectOption(option: string) {
 	                    <img class="icon-pic" :src="preferencesIcons[preference.name]" alt="">
                         </div>
                     </template>
+
+		    <template v-for="preference in user_preferences">
+                        <div style="font-size: 18px;">
+                            {{preference.name}}
+                            <img class="icon-pic" :src="preferencesIcons[preference.name]" alt="">
+                        </div>
+                    </template>
+
 	  
 		    <transition name="fade">
                             <div v-if="showEditGroup" class="popup">
