@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from main import views
+from events import views as e_views
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework import routers
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -30,6 +31,10 @@ router.register(r'audience', views.AudienceViewSet)
 router.register(r'book', views.BookViewSet)
 router.register(r'users_wallet', views.UsersWalletViewSet)
 router.register(r'history', views.BookHistoryViewSet)
+router.register(r'pair', e_views.PairViewSet)
+router.register(r'event_item', e_views.EventItemViewSet)
+router.register(r'event_type', e_views.EventTypeViewSet)
+# router.register(r'users_search', e_views.UserSearchViewSet)
 
 urlpatterns = [
     path('base-info/', include(router.urls)),
