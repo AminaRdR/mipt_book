@@ -322,7 +322,7 @@ const hideAudienceInfo = () => {
 			    		<div :class="['time-slot-new', `background_${time_slot[1]}`]">
 						<div style="display: flex; justify-content: space-between;">
                                 			<p class="time">{{time_slot[0]}}</p>
-                                			<p v-if="time_slot[1] == 'Отсутствует для бронирования'" style="padding-left: 10px;">{{time_slot[2]}}</p>
+                                			<p v-if="time_slot[1] == 'Отсутствует для бронирования'" style="padding-left: 10px;">{{time_slot[6]}}</p>
 							<p v-if="time_slot[1] == 'Забронировано'" style="padding-left: 10px;">Забронировано</p>
 							<p v-if="time_slot[1] == 'Свободно'" style="padding-left: 10px;">Свободно</p>
 							<input v-if="time_slot[1] == 'Забронировано'" @click="updateTimeSlot(`${time_slot[0]}`)" type="checkbox" id="scales" name="scales" style="width: 20px;"/>

@@ -426,6 +426,24 @@ def get_book_audience_response(
             },
             status=status.HTTP_204_NO_CONTENT)
 
+    if get_audience_by_number(number) is None:
+        log(f"Аудитория отсутствует: u={user} number={number}", "i")
+        return Response(
+            {
+                "result": False,
+                "Error": f"Аудитории не существует: u={user} number={number}"
+            },
+            status=status.HTTP_204_NO_CONTENT)
+
+    if get_user_by_username(user) is None:
+        log(f"Пользователь отсутствует: u={user} number={number}", "i")
+        return Response(
+            {
+                "result": False,
+                "Error": f"Пользователя не существует: u={user} number={number}"
+            },
+            status=status.HTTP_204_NO_CONTENT)
+    
     new_book = Book(
         audience=get_audience_by_number(number),
         user=get_user_by_username(user),
