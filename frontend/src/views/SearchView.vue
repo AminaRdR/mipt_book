@@ -43,7 +43,6 @@ const week_day_arr = [
       ];
 
 const time_slot_arr = [
-	    "09:00",
         "09:00",
         "10:45",
         "12:20",
@@ -117,11 +116,11 @@ async function loadSearch(){
     <h1>Результат поиска:</h1>
     <template v-for="search_item in search_data">
         <div class="container-res-item">
-            <div style="display: flex; flex-direction: column; flex-wrap: wrap; padding-left: 3vw; max-width: 40vw;">
+            <div class="info-container" style="display: flex; flex-direction: column; flex-wrap: wrap; padding-left: 3vw; max-width: 40vw;">
                 <div><p>{{search_item.name}}</p></div>
                 <div><p> Ауд. {{search_item.audience_number}}</p></div>
             </div>
-            <div style="display: flex; flex-direction: column; flex-wrap: wrap; row-gap: 5px;">
+            <div class="time-container">
                 <div class="container-show-time">{{ week_day_arr[search_item.pair.week_day_index-1] }}</div>
                 <div class="container-show-time">{{ time_slot_arr[search_item.pair.time_slot_index-1] }}</div>
             </div>
@@ -162,7 +161,7 @@ async function loadSearch(){
     min-width: 20vw;
   }
   .container-res-item {
-    height: 20vw;
+    min-height: 20vw;
   }
   .container-show-time {
     min-width: 20vw;
@@ -245,6 +244,25 @@ async function loadSearch(){
   background: #275ff2;
   border-radius: 10px;
   min-height: 7.5vw;
+}
+
+.time-container {
+  width: 33%;
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center;
+  flex-wrap: wrap;
+  row-gap: 5px;
+}
+
+.info-container {
+  width: 66%;
+  word-wrap: break-word;
+  display: flex; 
+  flex-direction: column; 
+  flex-wrap: wrap;
+  padding-left: 3vw; 
+  max-width: 40vw;
 }
 
 </style>

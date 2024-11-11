@@ -20,9 +20,9 @@ class EventsConfig(AppConfig):
 
             for week_day_index in range(1,8):
                 for time_slot_index in range(1,15):
-                    if len(Pair.objects.filter(
-                            week_day_index=week_day_index,
-                            time_slot_index=time_slot_index)) != 1:
+                    repeat_number = len(Pair.objects.filter(week_day_index=week_day_index, time_slot_index=time_slot_index))
+                    if repeat_number == 0:
+                        # Создаём новые
                         pair = Pair(
                             name="Пара",
                             week_day_index=week_day_index,
@@ -32,6 +32,11 @@ class EventsConfig(AppConfig):
                         pair.description = f"Пара номер: {pair.get_week_day()} {pair.get_time_slot()}"
                         pair.save()
                         logging.info(f"Создана пара: {pair.name}")
+                    elif repeat_number == 1:
+                        # Пропускаем создание 
+                        pass
+                    else:
+                        Pair.objects.filter(week_day_index=week_day_index, time_slot_index=time_slot_index).delete()
         update_base_data()
         type_user = EventType.objects.get_or_create(
             name="Пользовательское мероприятие",
@@ -65,3 +70,4 @@ def run_command_after_migration(sender, kwargs):
 
 def run_command_after_startup():
     logging.info("END SETTING UP APPLICATION EVENTS")
+
