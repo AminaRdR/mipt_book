@@ -176,7 +176,8 @@ def read_excel_timetable(apps, schema_editor):
                 description=description[:254],
                 pair=pair,
                 owner_user_wallet="mipt",
-                event_type=event_type
+                event_type=event_type,
+                audience_number=f"{audience_number} {building_name}"
             )
             event_item.save()
             log(f"ADD EVENT TO SEARCH: {event_item.name}", "i")

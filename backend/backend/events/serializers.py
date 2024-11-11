@@ -24,7 +24,7 @@ class UserSearchSerializer(serializers.HyperlinkedModelSerializer):
 class EventItemSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = EventItem
-        fields = ['name', 'description', 'pair', 'owner_user_wallet']
+        fields = ['name', 'description', 'pair', 'owner_user_wallet', 'audience_number']
 
     def to_representation(self, instance):
         response = super().to_representation(instance)

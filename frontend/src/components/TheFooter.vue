@@ -30,6 +30,12 @@ onMounted(()=>{
       Авторизация
     </div>
   </RouterLink>
+  <RouterLink to="/search/" custom v-slot="{navigate}">
+    <div role="link" @click="navigate">
+      <img src="@/assets/search_1.svg" class="icon-pic" alt=""><br>
+      Поиск
+    </div>
+  </RouterLink>
   <RouterLink to="/book-history/" custom v-slot="{navigate}">
     <div role="link" @click="navigate">
       <img src="@/assets/book.svg" class="icon-pic" alt=""><br>

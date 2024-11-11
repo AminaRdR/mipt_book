@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import Header from "@/components/TheHeader.vue";
-import {ref, type Ref, onMounted, reactive, type Reactive, defineExpose, provide, inject} from 'vue';
+import {ref, type Ref, onMounted, reactive, type Reactive, defineExpose, provide, inject, defineComponent} from 'vue';
 import { useRouter } from 'vue-router';
 
 interface Pair {
@@ -16,6 +16,7 @@ interface SearchItem {
   description: string,
   pair: Pair,
   owner_user_wallet: string,
+  audience_number: string,
 }
 
 // DO THIS
@@ -30,6 +31,34 @@ let token = ref<string|null>(null);
 let username = ref<string|null>(null);
 let search_data: Ref<SearchItem[]> = ref([]);
 let search_text = ref<string|null>(null);
+
+const week_day_arr = [
+	    "Понедел.",
+        "Вторник",
+        "Среда",
+        "Четвер",
+        "Пятница",
+        "Суббота",
+        "Воскрес."
+      ];
+
+const time_slot_arr = [
+	    "09:00",
+        "09:00",
+        "10:45",
+        "12:20",
+        "13:45",
+        "15:30",
+        "17:05",
+        "18:35",
+        "20:00",
+        "22:00",
+        "23:59",
+        "01:30",
+        "03:00",
+        "04:30",
+        "06:00"
+      ];
 
 onMounted(()=>{
   token.value = localStorage.getItem("auth-token");
@@ -68,18 +97,39 @@ async function loadSearch(){
 </script>
 
 <template>
-<div>
-    <h1>Поиска:</h1>
+<div class="container-search">
+    <div class="centered-div-back">
+        <p class="above_title">Поиск по парам:</p>
         <form @submit.prevent="loadSearch">
-            <input type="text" id="scales" name="scales" v-model="search_text"/>
-            <button type="submit"><h3>Искать</h3></button>
+            <div style="display: flex;">
+                <div style="border-radius: 10px; min-height: 7.5vw;">
+                    <input type="text" class="container-search-text" id="scales" name="scales" v-model="search_text" placeholder="Б02-003, Загряд, Мат ан..."/>
+                </div>
+                <div class="container-search-for-button">
+                    <button class="container-search-button" type="submit">Искать</button>
+                </div>
+            </div>
 		</form>
+	</div>
 </div>
 
 <div>
     <h1>Результат поиска:</h1>
     <template v-for="search_item in search_data">
-	    <div style="padding-top: 10px;">
+        <div class="container-res-item">
+            <div style="display: flex; flex-direction: column; flex-wrap: wrap; padding-left: 3vw; max-width: 40vw;">
+                <div><p>{{search_item.name}}</p></div>
+                <div><p> Ауд. {{search_item.audience_number}}</p></div>
+            </div>
+            <div style="display: flex; flex-direction: column; flex-wrap: wrap; row-gap: 5px;">
+                <div class="container-show-time">{{ week_day_arr[search_item.pair.week_day_index-1] }}</div>
+                <div class="container-show-time">{{ time_slot_arr[search_item.pair.time_slot_index-1] }}</div>
+            </div>
+        </div>
+
+
+
+	    <!-- <div style="padding-top: 10px;">
             <p>Мероприятие: {{search_item.name}}</p>
             <p>Описание: {{search_item.description}}</p>
             <p>Владелец: {{search_item.owner_user_wallet}}</p>
@@ -87,11 +137,114 @@ async function loadSearch(){
             <p>Временной слот: {{search_item.pair.time_slot_index}}</p>
             <p>День недели: {{search_item.pair.week_day_index}}</p>
             <p>Описание пары: {{search_item.pair.description}}</p>
-        </div>
+        </div> -->
     </template>
 </div>
 
 </template>
 
 <style scoped>
+
+.container-search {
+  background-image: url('@/assets/back_1.jpg');
+}
+
+.centered-div-back {
+  padding: 20px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .media-container {
+  	min-width: 90vw;
+  }
+  .container-search-button {
+    min-width: 20vw;
+  }
+  .container-res-item {
+    height: 20vw;
+  }
+  .container-show-time {
+    min-width: 20vw;
+    min-height: 7.5vw;
+  }
+  .container-search-text {
+    min-height: 7.5vw;
+    min-width: 65vw;
+  }
+  .container-search-for-button {
+    min-height: 7.5vw;
+  }
+}
+
+@media (min-width: 768px) {
+  .media-container {
+    min-width: 40vw;
+  }
+  .container-search-button {
+    min-width: 20vw;
+  }
+  .container-res-item {
+    height: 10vw;
+  }
+  .container-show-time {
+    min-width: 10vw;
+    min-height: 3.75vw;
+  }
+  .container-search-text {
+    min-height: 3.75vw;
+    min-width: 65vw;
+  }
+  .container-search-for-button {
+    min-height: 3.75vw;
+  }
+}
+
+.container-search-text {
+  font-size: 18px;
+  padding-left: 10px;
+  border-radius: 10px;
+}
+
+.container-search-button {
+  height: 100%;
+  color: white;
+  font-size: 16px;
+  background-color: #275ff2;
+}
+
+.above_title {
+  color: white;
+  font-size: 60px;
+}
+
+.container-res-item {
+  padding-top: 10px;
+  width: 95%;
+  display: flex;
+  justify-content: space-between;
+
+  background-color: #fefdf9;
+  min-width: 90vw;
+  font-size: 22px;
+  top: 50%;
+  left: 50%;
+  border: 1px solid black;
+  border-radius: 10px;
+}
+
+.container-show-time {
+  color: white;
+  background-color: #275ff2;
+  border-radius: 10px;
+  padding: 5px;
+  text-align: center;
+}
+
+.container-search-for-button {
+  background: #275ff2;
+  border-radius: 10px;
+  min-height: 7.5vw;
+}
+
 </style>

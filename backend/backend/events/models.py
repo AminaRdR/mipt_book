@@ -71,6 +71,7 @@ class EventType(models.Model):
 class EventItem(models.Model):
     name = models.CharField(max_length=64, blank=False)
     description = models.CharField(max_length=255, blank=False)
+    audience_number = models.CharField(max_length=64, blank=True)
 
     pair = models.ForeignKey(
         "Pair",
