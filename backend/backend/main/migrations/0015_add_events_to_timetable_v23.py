@@ -133,6 +133,11 @@ def read_excel_timetable(apps, schema_editor):
     Audience = apps.get_model('main', 'Audience')
     DayHistory = apps.get_model('main', 'DayHistory')
 
+    # Создаем мероприятия для поиска по ним
+    EventItem = apps.get_model('events', 'EventItem')
+    EventType = apps.get_model('events', 'EventType')
+    Pair = apps.get_model('events', 'Pair')
+
     # Читаем данные файлов и записываем их в соответствующий класс
     audience_event_list = get_event_list("excel/res_aud.xlsx", "Лист1")
 
@@ -152,6 +157,31 @@ def read_excel_timetable(apps, schema_editor):
         day_index = audience_event[1]
         pair_index = audience_event[2]
         pair_name = audience_event[3]
+
+        # Создаем мероприятие
+        name = pair_name
+        description = pair_name
+        EventItem.objects.filter(name="Лекция").delete()
+        if len(Pair.objects.filter(time_slot_index=pair_index+1, week_day_index=day_index+1)) == 1 and \
+                len(EventType.objects.filter(name="Лекция")) == 1:
+            # Создаем и добавляем событие
+            pair = Pair.objects.get(time_slot_index=pair_index+1, week_day_index=day_index+1)
+            event_type = EventType.objects.get(name="Лекция")
+
+            # Удаляем те же самые события
+            EventItem.objects.filter(name=name[:63],pair=pair).delete()
+
+            event_item = EventItem.objects.create(
+                name=name[:63],
+                description=description[:254],
+                pair=pair,
+                owner_user_wallet="mipt",
+                event_type=event_type,
+                audience_number=f"{audience_number} {building_name}"
+            )
+            event_item.save()
+            log(f"ADD EVENT TO SEARCH: {event_item.name}", "i")
+
         log(f"ADD EVENT TO TIMETABLE: {audience_event}", "i")
 
         if len(Building.objects.filter(name=building_name)) == 1:

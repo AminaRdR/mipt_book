@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'users',
     'main',
     'test',
+    'events',
     'rest_framework',
     'sslserver',
     'corsheaders',
