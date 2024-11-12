@@ -1,0 +1,32 @@
+# PYTHON
+
+__pycache__/
+target/
+
+
+# idea
+.idea/
+**/*.swo
+**/*.swp
+
+# certificate
+mipt.crt
+mipt.key
+
+# database
+pgdb/
+
+# logging
+debug.log
+debug_file.log
+info_file.log
+warning_file.log
+error_file.log
+critical_file.log
+
+# pycache
+__pycache__/*
+
+# docker prod
+docker-compose-prod.yml
+prod_config.env
