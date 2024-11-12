@@ -115,7 +115,7 @@ def register_user(request):
             user_wallet = create_user_wallet(token, user)
             
             # Собираем данные для отправки email сообщения
-            email_address = user.email # "kristal.as@phystech.edu"
+            email_address = user.email
             email_text = get_registration_text(user.username)
             email_title = f"Регистрация нового пользователя {user.username}"
             send_email(email_address, email_text, email_title)
@@ -145,7 +145,7 @@ def edit_user_name(request):
                         user.save()
 
                         # Собираем данные для отправки email сообщения
-                        email_address = user.email # "kristal.as@phystech.edu"
+                        email_address = user.email
                         email_text = get_change_name_text(user.username,data_request)
                         email_title = f"Изменение ФИО пользователя {user.username}"
                         send_email(email_address, email_text, email_title)
@@ -228,7 +228,6 @@ def generate_random_letters(length=10):
 
 def get_usrname_by_email(email):
     random_letters = generate_random_letters()
-    #return str(email).split("@")[0]
     return random_letters
 
 
@@ -242,7 +241,7 @@ def oauth_yandex(request):
         params = {
             "oauth_token": data_request.get("access_token"),
             "format": "json",
-            "jwt_secret": USER_OAUTH_YANDEX_TOKEN # "f8ee628da5e249ffb5b9659d18fbeff4"
+            "jwt_secret": USER_OAUTH_YANDEX_TOKEN
         }
         
         response = requests.get(url, params=params)
@@ -254,7 +253,6 @@ def oauth_yandex(request):
             log(f"oauth_email={oauth_email} response={response.json()} username={oauth_username}", "i")
 
             number_of_users_with_email = len(User.objects.filter(email=oauth_email))
-            #if len(User.objects.filter(username=oauth_username)) == 0: 
             if number_of_users_with_email == 0:
                 log(f"Регистрация пользоватея: {oauth_email}", "i")
                 new_user = User.objects.create_user(oauth_username)
@@ -270,9 +268,6 @@ def oauth_yandex(request):
                 new_user.user_role = Role.objects.get(name="Пользователь")
                 new_user.save()
 
-                #  token = Token.objects.create(user=new_user)
-                #  token.save()
-
                 new_token, created = Token.objects.get_or_create(user=new_user)
                 log(f"=========. T:{new_token}", "i")
                 user_wallet = create_user_wallet(new_token, new_user)
@@ -282,9 +277,7 @@ def oauth_yandex(request):
                     "token_for_user": new_token.key, 
                     "access_token": data_request.get("access_token", "")}, status=status.HTTP_202_ACCEPTED)
             elif number_of_users_with_email == 1:    
-                #elif len(User.objects.filter(username=oauth_username)) == 1:
                 log(f"Авторизация пользователя u:{oauth_email}", "i")
-                #my_user = User.objects.get(username=oauth_username)
                 my_user = User.objects.get(email=oauth_email)
                 my_token, created = Token.objects.get_or_create(user=my_user)
                 

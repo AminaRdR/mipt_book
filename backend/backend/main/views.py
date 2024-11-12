@@ -240,7 +240,7 @@ def index_user_wallet(request):
                     email = str(request.POST.get('email', ''))
                     username.replace('Пользователь: ', '')
                     log(f"Username for register: '{username}'", "i")
-                    if username is not None: # and username == check_token_result["value"]["username"]:
+                    if username is not None:
                         user_wallet = create_user_wallet(username, token=token, email=email)
                         if user_wallet:
                             log(f"User wallet created. Id:{user_wallet.id}, Name:{user_wallet.username}", "i")
@@ -280,7 +280,6 @@ def index_user_wallet(request):
             token = request.POST['token']
             try:
                 log(f"Начало обновления кошелька пользователя: D:{request.POST} T:{token}", "i")
-                # check_token_result = asyncio.run(check_token(token))
                 if False:
                     username = str(request.POST.get('username', None))
                     email = str(request.POST.get('email', ''))
