@@ -105,14 +105,16 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',   # Используется PostgreSQL
-        'NAME': 'postgres_mipt', # Имя базы данных
-        'USER': 'postgres_mipt', # Имя пользователя
-        'PASSWORD': 'mipt_book123', # Пароль пользователя
-        'HOST': 'pgdb', # pgdb Наименование контейнера для базы данных в Docker Compose
-        'PORT': '5432',  # Порт базы данных
+        'ENGINE':   'django.db.backends.postgresql',
+        'NAME':     os.environ.get('BACKEND_DB_NAME',       'postgres_mipt'),
+        'USER':     os.environ.get('BACKEND_DB_USER',       'postgres_mipt'),
+        'PASSWORD': os.environ.get('BACKEND_DB_PASSWORD',   'postgres_mipt123'),
+        'HOST':     os.environ.get('BACKEND_DB_HOST',       'pgdb'),
+        'PORT':     os.environ.get('BACKEND_DB_PORT',       '5432')
     }
 }
+
+EMAIL_KEY = os.environ.get('EMAIL_KEY', 'hack_me_backend')
 
 
 # Password validation

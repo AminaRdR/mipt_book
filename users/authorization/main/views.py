@@ -11,6 +11,9 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 import logging
 
+import random
+import string
+
 import requests
 from django.core.exceptions import ObjectDoesNotExist
 import json
@@ -20,6 +23,9 @@ from .services import \
 from .config import \
     get_change_name_text, \
     get_registration_text
+from django.conf import settings
+EMAIL_KEY = settings.EMAIL_KEY
+USER_OAUTH_YANDEX_TOKEN = settings.USER_OAUTH_YANDEX_TOKEN
 from .services import \
     log
 
@@ -27,7 +33,8 @@ from .services import \
 class IndexAuth(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request): 
+    def get(self, request):
+        log("=================================", "i")
         preferences = {}
         for preference in request.user.preferences.all():
             preferences[preference.name] = preference.description
@@ -214,8 +221,15 @@ def edit_user_name(request):
                             status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
+def generate_random_letters(length=10):
+  letters = random.choices(string.ascii_letters, k=length)
+  return ''.join(letters)
+
+
 def get_usrname_by_email(email):
-    return str(email).split("@")[0]
+    random_letters = generate_random_letters()
+    #return str(email).split("@")[0]
+    return random_letters
 
 
 @api_view(['POST', 'GET'])
@@ -226,9 +240,9 @@ def oauth_yandex(request):
 
         url = "https://login.yandex.ru/info"
         params = {
-            "oauth_token": data_request.get("access_token"), # , "y0_AgAEA7qkNfKRAAymngAAAAEVhwM5AADyHiBoCChFpLOXWx4oCfaSrCdGmw"),
+            "oauth_token": data_request.get("access_token"),
             "format": "json",
-            "jwt_secret": "6cd8b4452aa241128a54e3470866bc1f"
+            "jwt_secret": USER_OAUTH_YANDEX_TOKEN # "f8ee628da5e249ffb5b9659d18fbeff4"
         }
         
         response = requests.get(url, params=params)
@@ -237,9 +251,11 @@ def oauth_yandex(request):
         if response.status_code == 200:
             oauth_email = response.json().get('default_email', '')
             oauth_username = get_usrname_by_email(oauth_email)
-            log(f"oauth_email={oauth_email} response={response.json()}", "i")
+            log(f"oauth_email={oauth_email} response={response.json()} username={oauth_username}", "i")
 
-            if len(User.objects.filter(username=oauth_username)) == 0: 
+            number_of_users_with_email = len(User.objects.filter(email=oauth_email))
+            #if len(User.objects.filter(username=oauth_username)) == 0: 
+            if number_of_users_with_email == 0:
                 log(f"Регистрация пользоватея: {oauth_email}", "i")
                 new_user = User.objects.create_user(oauth_username)
                 new_user.email = oauth_email
@@ -265,15 +281,32 @@ def oauth_yandex(request):
                     "Result": response.json(),
                     "token_for_user": new_token.key, 
                     "access_token": data_request.get("access_token", "")}, status=status.HTTP_202_ACCEPTED)
-            elif len(User.objects.filter(username=oauth_username)) == 1:
-                my_user = User.objects.get(username=oauth_username)
-
+            elif number_of_users_with_email == 1:    
+                #elif len(User.objects.filter(username=oauth_username)) == 1:
+                log(f"Авторизация пользователя u:{oauth_email}", "i")
+                #my_user = User.objects.get(username=oauth_username)
+                my_user = User.objects.get(email=oauth_email)
                 my_token, created = Token.objects.get_or_create(user=my_user)
+                
+                if False:
+                    # Обновление каждого пользователя через смену лигина пользователя
+                    for this_user in User.objects.all():
+                        # Проходимся по всем ФИО и отправляем запрос на обновление
+                        this_user.username = get_usrname_by_email(this_user.email)
+                        this_user.save()
+                        this_token, this_created = Token.objects.get_or_create(user=this_user)
+                        create_user_wallet(this_token, this_user, request_type="update_user_wallet")
+                        log(f"Запрос на обновление фио пользователей u:{my_user}", "i")
+
 
                 return Response({
                     "Result": response.json(),
                     "token_for_user": my_token.key,
                     "access_token": data_request.get("access_token", "")}, status=status.HTTP_202_ACCEPTED)
+            else:
+                log(f"Зарегистрировано слишком много пользователей с этой почтой: {number_of_users_with_email}", "i")
+                return Response({"Error": "Error", "value": "Зарегистрировано слишком много пользователей с этой почтой"},
+                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
         else:
             log(f"Status code: {response.status_code}", "e")
             log(f"Response: {response}", "i")

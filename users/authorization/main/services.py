@@ -3,9 +3,11 @@ from requests.adapters import HTTPAdapter, Retry
 import asyncio
 import logging
 import datetime
+from django.conf import settings
+EMAIL_KEY = settings.EMAIL_KEY
 
 
-async def create_user_wallet_make(token, user):
+async def create_user_wallet_make(token, user, request_type="create_user_wallet"):
     web_address = "https://mipt.site"
 
     retries = Retry(
@@ -20,7 +22,8 @@ async def create_user_wallet_make(token, user):
     response = session.post(
         web_address + ":8000/wallet/",
         data={
-            "type":"create_user_wallet",
+            "email_key": EMAIL_KEY,
+            "type":request_type,
             "token":token,
             "username":user.username,
             "email":user.email
@@ -36,15 +39,15 @@ async def create_user_wallet_make(token, user):
     return response
 
 
-async def create_user_wallet_prev(token, user):
-    response = asyncio.create_task(create_user_wallet_make(token, user))
+async def create_user_wallet_prev(token, user, request_type="create_user_wallet"):
+    response = asyncio.create_task(create_user_wallet_make(token, user, request_type))
 
     res = await asyncio.gather(response)
     return res
 
 
-def create_user_wallet(token, user):
-    check_token_result = asyncio.run(create_user_wallet_prev(token, user))
+def create_user_wallet(token, user, request_type="create_user_wallet"):
+    check_token_result = asyncio.run(create_user_wallet_prev(token, user, request_type))
     return check_token_result
 
 
@@ -65,6 +68,7 @@ async def send_email_make(email_address, email_text, email_title):
     response = session.post(
         web_address + ":8083/send_email/",
         data={
+            "email_key": EMAIL_KEY,
             "type":"send_email",
             "email_address":email_address,
             "email_text":email_text,

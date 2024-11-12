@@ -16,6 +16,8 @@ from rest_framework.decorators import api_view
 import json
 from rest_framework import status
 from rest_framework.response import Response
+from django.conf import settings
+EMAIL_KEY = settings.EMAIL_KEY
 
 
 @csrf_exempt
@@ -57,14 +59,21 @@ def make_pdf_for_user_booking(request):
 def send_email(request):
     if request.method == 'POST':
         data_request = request.POST  # json.loads(list(request.POST.dict())[0])
+        email_key = data_request.get('email_key', '')
         try:
-            if data_request.get('type') == "send_text_email":
+            request_type = data_request.get('type')
+            if request_type == "send_text_email" and email_key == EMAIL_KEY:
+                log(f"Подтверждение корректности токена: {email_key}=={EMAIL_KEY}", "i")
                 email_address = data_request.get('email_address')
                 email_text = data_request.get('email_text')
                 email_title = data_request.get('email_title')
                 log(f"Отправка сообщения через форму. A:{email_address}, Text:{email_text}, Title:{email_title}", "i")
                 send_task_text_email.delay(email_address, email_text, email_title)
                 return JsonResponse({'result': 'Email sent successfully'})
+            else:
+                correct = email_key == EMAIL_KEY
+                log(f"Type={request_type} key={email_key} KEY={EMAIL_KEY}", "e")
+                return JsonResponse({'result': f"Type={request_type} correct={correct}"})
         except ConnectionError as e:
             log(f"ConnectionError. Error:{e}", "e")
             return Response(
@@ -83,8 +92,11 @@ def send_email(request):
 def send_email_booking(request):
     if request.method == 'POST':
         data_request = request.POST  # json.loads(list(request.POST.dict())[0])
+        email_key = data_request.get('email_key', '')
         try:
-            if data_request.get('type') == "send_email":
+            request_type = data_request.get('type')
+            if request_type == "send_email" and email_key == EMAIL_KEY:
+                log(f"Подтверждение корректности токена: {email_key}=={EMAIL_KEY}", "i")
                 email_address = data_request.get('email_address')
                 email_text = data_request.get('email_text')
                 email_title = data_request.get('email_title')
@@ -101,7 +113,8 @@ def send_email_booking(request):
                     bb_number=data_request.get('bb_number', ''),
                     preferences_list=data_request.get('preferences_list', ''))
                 return JsonResponse({'result': 'Email sent successfully'})
-            elif data_request.get('type') == "send_text_email":
+            elif request_type == "send_text_email" and email_key == EMAIL_KEY:
+                log(f"Подтверждение корректности токена: {email_key}=={EMAIL_KEY}", "i")
                 email_address = data_request.get('email_address')
                 email_text = data_request.get('email_text')
                 email_title = data_request.get('email_title')
@@ -111,6 +124,10 @@ def send_email_booking(request):
                     email_text,
                     email_title)
                 return JsonResponse({'result': 'Email sent successfully'})
+            else:
+                correct = email_key == EMAIL_KEY
+                log(f"Type={request_type} key={email_key} KEY={EMAIL_KEY}", "e")
+                return JsonResponse({'result': f"Type={request_type} correct={correct}"})
         except ConnectionError as e:
             log(f"ConnectionError. Error:{e}", "e")
             return Response(

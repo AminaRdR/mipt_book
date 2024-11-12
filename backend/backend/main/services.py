@@ -21,6 +21,8 @@ from .config import \
     TIME_SLOT_DICT, \
     ADMIN_FOOTER_INFO, \
     TIME_SLOT_ARR
+from django.conf import settings
+EMAIL_KEY = settings.EMAIL_KEY
 from collections import namedtuple
 
 
@@ -102,6 +104,7 @@ async def send_email_make_booking(email_address, email_text, email_title, user_n
     response = session.post(
         web_address + ":8083/send_email_booking/",
         data={
+            "email_key": EMAIL_KEY,
             "type":"send_email",
             "email_address": email_address,
             "email_text": email_text,
@@ -160,6 +163,7 @@ async def send_email_make(email_address, email_text, email_title):
     session.mount('https://', adapter)
 
     data = {
+            "email_key": EMAIL_KEY,
             "type":"send_text_email",
             "email_address":email_address,
             "email_text":email_text,
@@ -237,6 +241,29 @@ def create_user_wallet(username, token="", email=""):
     )
     users_wallet.save()
     log(f"Кошелёк пользователя успешно создан. U:{username}", "d")
+    return users_wallet
+
+
+def update_user_wallet(username, token="", email=""):
+    log(f"Начало создания кошелька пользователя. U:{username}, T{token}", "d")
+    user_len = len(UsersWallet.objects.filter(email=email))
+    if user_len > 1:
+        log(f"При создании кошелька пользователь не был найден. U:{username}", "e")
+        return False
+    elif user_len == 1:
+        users_wallet = UsersWallet.objects.get(email=email)
+        users_wallet.username = username
+        users_wallet.token = token
+        users_wallet.save()
+        log(f"Кошелёк пользователя успешно обновлён. U:{username}", "d")
+    elif user_len == 0:
+        users_wallet = UsersWallet(
+                username=username,
+                email=email,
+                token=token,
+                number_bb=get_bb_amount_by_email(email))
+        users_wallet.save()
+        log(f"Кошелёк пользователя успешно создан и обновлён. U:{username}", "d")
     return users_wallet
 
 

@@ -29,7 +29,7 @@ from .services import \
     get_time_slots, \
     get_week_time_slots, \
     mark_not_my_booking, \
-    mark_this_is_my_booking
+    mark_this_is_my_booking, update_user_wallet
 import logging
 import datetime
 
@@ -44,6 +44,8 @@ from rest_framework import status
 from rest_framework import generics
 import json
 from .config import get_stop_booking_text, TIME_SLOT_DICT
+from django.conf import settings
+EMAIL_KEY = settings.EMAIL_KEY
 
 
 class InstituteViewSet(viewsets.ModelViewSet):
@@ -270,6 +272,28 @@ def index_user_wallet(request):
                 return Response(
                     {"Error": "ConnectionError", "value": str(e)},
                     status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            except Exception as e:
+                log(f"Error:{e}", "e")
+                return Response({"Error": "Error", "value": str(e)},
+                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        elif request.POST.get('type') == "update_user_wallet":
+            token = request.POST['token']
+            try:
+                log(f"Начало обновления кошелька пользователя: D:{request.POST} T:{token}", "i")
+                # check_token_result = asyncio.run(check_token(token))
+                if False:
+                    username = str(request.POST.get('username', None))
+                    email = str(request.POST.get('email', ''))
+                    log(f"Update userwallet: '{username}'", "i")
+
+                    for hist_item in BookHistory.objects.filter(user=str(email).split("@")[0]):
+                        hist_item.user = username
+                        hist_item.save()
+
+                    update_user_wallet(username, token=token, email=email)
+                return Response(
+                        {"Error": "Обновление кошелька временно откоючено"},
+                        status=status.HTTP_201_CREATED)
             except Exception as e:
                 log(f"Error:{e}", "e")
                 return Response({"Error": "Error", "value": str(e)},

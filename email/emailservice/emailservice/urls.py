@@ -28,7 +28,7 @@ from mainemail.views import \
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('send_test/', send_test),
+    # path('send_test/', send_test),
     path('send_email/', send_email),
     path('send_email_booking/', send_email_booking),
     # path('send_weekly/', send_weekly),

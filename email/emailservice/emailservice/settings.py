@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from celery import Celery
 from celery.schedules import crontab
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -103,6 +104,8 @@ DATABASES = {
 }
 
 
+EMAIL_KEY = os.environ.get('EMAIL_KEY', 'hack_me_email')
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -134,11 +137,11 @@ USE_I18N = True
 USE_TZ = True
 
 # EMAIL
-EMAIL_HOST = "smtp.yandex.ru"
-EMAIL_PORT = 465
-EMAIL_HOST_USER = "info@mipt.site"
-EMAIL_HOST_PASSWORD = "ygarwzrinvzmihwu"
-EMAIL_USE_SSL = True
+EMAIL_HOST =            os.environ.get('EMAIL_HOST',            'smtp.yandex.ru')
+EMAIL_PORT =            os.environ.get('EMAIL_PORT',            465)
+EMAIL_HOST_USER =       os.environ.get('EMAIL_HOST_USER',       'youe_email@test.com')
+EMAIL_HOST_PASSWORD =   os.environ.get('EMAIL_HOST_PASSWORD',   'your_password')
+EMAIL_USE_SSL =         os.environ.get('EMAIL_USE_SSL',         True)
 
 
 # CELERY

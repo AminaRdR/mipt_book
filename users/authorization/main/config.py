@@ -1,4 +1,5 @@
 # email text configurations for changing username
+EMAIL_KEY = "hack_me_0000"
 CHANGE_NAME_TITLE = "Изменение ФИО пользователя"
 ADMIN_FOOTER_INFO = "\n\nС уважением,\n" \
                     "Сервис бронирования аудиторий МФТИ\n" \

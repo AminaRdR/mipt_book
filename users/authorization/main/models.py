@@ -153,5 +153,5 @@ class PreferencesAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    search_fields = ("id", "username", "first_name", "second_name", "third_name", "institute_group", "user_role", "book_rate")
+    search_fields = ("id", "username", "first_name", "last_name", "third_name", "book_rate", "email")
     list_display = ("id", "username", "email", "institute_group", "user_role", "book_rate",)

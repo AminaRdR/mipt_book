@@ -100,19 +100,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'authorization.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',   # Используется PostgreSQL
-        'NAME': 'postgres_mipt_users', # Имя базы данных
-        'USER': 'postgres_mipt_users', # Имя пользователя
-        'PASSWORD': 'mipt_book_users123', # Пароль пользователя
-        'HOST': 'pgdb_users', # pgdb Наименование контейнера для базы данных в Docker Compose
-        'PORT': '5431',  # Порт базы данных
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME':     os.environ.get('USERS_DB_NAME',     'postgres_mipt_users'),
+        'USER':     os.environ.get('USERS_DB_USER',     'postgres_mipt_users'),
+        'PASSWORD': os.environ.get('USERS_DB_PASSWORD', 'postgres_mipt_users123'),
+        'HOST':     os.environ.get('USERS_DB_HOST',     'pgdb_users'),
+        'PORT':     os.environ.get('USERS_DB_PORT',     '5431')
     }
 }
+
+EMAIL_KEY = os.environ.get('EMAIL_KEY', 'hack_me_users')
+USER_OAUTH_YANDEX_TOKEN = os.environ.get('USER_OAUTH_YANDEX_TOKEN', '')
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
